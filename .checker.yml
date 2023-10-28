@@ -1,0 +1,101 @@
+# default values for all tasks, can be overwritten in .task.yml params:
+params:
+  private_files: ["test_private.py"]
+  public_files: ["test_public.py", "conftext.py"]
+
+  run_typechecking: true
+  run_linting: true
+  run_testing: true
+
+  timeout: 60  # seconds
+
+
+# settings for export command, uses .deadlines.yml and `params` and each task params (in .task.yml)
+export:
+  public_repo: https://gitlab.manytask.org/test/public-test-repo
+  default_branch: main
+  commit_message: "auto: export new tasks"
+  templates: search  # search or create
+  exclude_global_regexps: [".github", "*.docker", ".releaser-ci.yml", ".review"]
+  exclude_task_regexps: [".template", $private_files]
+
+
+# manytask settings, used in scores export (testing)
+manytask:
+  manytask_url: https://test.manytask.org
+
+
+# settings for Tester, uses .checker.yml and `params` and each task params (in .task.yml)
+testing:
+  changes_detection: branch_name  # branch_name, last_commit, files
+  executor: minijail  # sandbox or minijail
+
+  # run once per repo
+  global_pipeline:
+    - name: "Copy global files"
+      fail: fast  # fast, after_all, never
+      run: "copy_files"
+      args:
+        from: $REF_DIR
+        to: $TEMP_DIR
+        files: ["tools", "pyproject.toml", ".deadlines.yml", ".checker.yml"]
+
+    - name: "Copy student tasks files"
+      fail: fast  # fast, after_all, never
+      run: "copy_tasks_files"
+      args:
+        from: "$REPO_DIR"
+        to: "$TEMP_DIR"
+        tasks: "$TASKS_SUB_PATHS"
+        files: ["*"]
+
+    - name: "Copy reference tests files"
+      fail: fast  # fast, after_all, never
+      run: "copy_tasks_files"
+      args:
+        from: "$REPO_DIR"
+        to: "$TEMP_DIR"
+        tasks: "$TASKS_SUB_PATHS"
+        files: ["*"]
+
+  # run once per task
+  tasks_pipeline:
+    - name: "Check forbidden regexps"
+      fail: fast  # fast, after_all, never
+      run: "check_regexps"
+      args:
+        from: "$TEMP_DIR/$TASK_SUB_PATH"
+        regexps: ["exit(0)"]
+
+    - name: "Run linter"
+      run_if: "$run_linter"
+      fail: after_all  # fast, after_all, never
+      run: "run_script"
+      args:
+        from: "$TEMP_DIR/$TASK_SUB_PATH"
+        script: "python -m ruff --config=$REPO_DIR/pyproject.toml $TASK_DIR"
+
+    - name: "Run typechecker"
+      run_if: "$run_typechecking"
+      fail: after_all  # fast, after_all, never
+      run: "run_script"
+      args:
+        from: "$TEMP_DIR/$TASK_SUB_PATH"
+        script: "python -m mypy --config-file=$REPO_DIR/pyproject.toml $TASK_DIR"
+
+    - name: "Collect tests"
+      run_if: "$run_testing"
+      fail: after_all  # fast, after_all, never
+      run: "run_script"
+      args:
+        from: "$TEMP_DIR/$TASK_SUB_PATH"
+        script: "python -m pytest --tb=no -qq --collect-only $TASK_DIR"
+
+    - name: "Run tests"
+      run_if: "$run_testing"
+      fail: after_all  # fast, after_all, never
+      run: "run_script"
+      args:
+        from: "$TEMP_DIR/$TASK_SUB_PATH"
+        script: "python -m pytest -qq $TASK_DIR"
+        timeout: "$timeout"

@@ -1,0 +1,23 @@
+# gitlab ci/cd file for students repo:
+# 1. grade students' tasks (and merge requests)
+# 2. grade students' merge requests
+#
+# should be configured to run as external ci/cd file (from public repo)
+# students has developer role, so they can't change ci/cd settings, so the file is fixed
+
+variables:
+  GIT_DEPTH: 1
+  GIT_STRATEGY: clone
+  REGISTRY: registry.gitlab.com/manytask/test/course-template-test-public
+  REF_DIR: /opt/shad
+
+
+grade:
+  image: $REGISTRY/testenv:latest
+  script:
+    - python3 -m checker grade
+      --timestamp $CI_PIPELINE_CREATED_AT
+      --username $GITLAB_USER_LOGIN
+      --submit-score
+      -- $CI_PROJECT_DIR $REF_DIR
+  timeout: 10 minutes

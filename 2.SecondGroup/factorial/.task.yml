@@ -1,0 +1,2 @@
+params:
+  public_files: ["test_public_custom.py"]

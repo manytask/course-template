@@ -1,0 +1,14 @@
+# gitlab ci/cd file for private repo:
+# 1. check groundtruth solutions vs tests
+# 2. export to public repo
+# 3. update manytask deadlines
+# 4. publish docker image
+
+
+variables:
+  GIT_DEPTH: 1
+  GIT_STRATEGY: clone
+  REGISTRY: registry.gitlab.com/manytask/test/course-template-test-public
+
+
+# TODO: add all jobs
