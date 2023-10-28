@@ -1,4 +1,2 @@
-version: 1
-
-structure:
-  public_patterns: ["test_public_custom.py"]
+params:
+  public_files: ["test_public_custom.py"]

@@ -1,14 +1,7 @@
-version: 1
-
-
 settings:
-  timezone: Europe/Moscow
-
+  timezone: Russia/Moscow
   deadlines: hard  # hard/interpolate
-  max_submissions: 10  # optional
-  submission_penalty: 0.1  # optional
-
-  task_url: https://example.com/$GROUP_NAME/$TASK_NAME  # optional
+  max_submission: 10  # optional
 
 
 schedule:
@@ -46,7 +39,6 @@ schedule:
       - task: palindrome
         score: 0
         special: 2
-        url: https://example.com
 
   - group: 4.FourthGroup
     enabled: false
