@@ -7,6 +7,7 @@ settings:
 schedule:
   - group: 1.FirstGroup
     enabled: true
+    tags: [tag1, tag2]
     start: 2020-01-01 18:00:00
     steps:
       0.5: 7d
@@ -17,6 +18,7 @@ schedule:
         bonus: 0
         special: 1
       - task: sum_a_b
+        tags: [tag3]
         score: 5
         bonus: 5
         special: 0
@@ -34,6 +36,7 @@ schedule:
         score: 20
 
   - group: 3.ThirdGroup
+    tags: [tag4]
     start: 2020-03-01 18:00:00
     tasks:
       - task: palindrome

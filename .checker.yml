@@ -12,7 +12,8 @@ params:
 
 # settings for export command, uses .deadlines.yml and `params` and each task params (in .task.yml)
 export:
-  public_repo: https://gitlab.manytask.org/test/public-test-repo
+  destination:
+    https://gitlab.manytask.org/test/public-test-repo: ["*"]  # repo: [task tags regexps]
   default_branch: main
   commit_message: "auto: export new tasks"
   templates: search  # search or create
@@ -22,7 +23,8 @@ export:
 
 # manytask settings, used in scores export (testing)
 manytask:
-  manytask_url: https://test.manytask.org
+  url: https://test.manytask.org
+  courses: ["test"]
 
 
 # settings for Tester, uses .checker.yml and `params` and each task params (in .task.yml)
