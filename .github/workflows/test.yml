@@ -5,6 +5,10 @@ on:
     branches: [ main ]
 
 
+permissions:
+  packages: write
+
+
 jobs:
   build-base-docker:
     uses: ./.github/workflows/reusable-docker-build-push.yml
