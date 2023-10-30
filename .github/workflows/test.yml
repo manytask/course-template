@@ -1,0 +1,53 @@
+name: 'Test private repo'
+
+on:
+  pull_request:
+    branches: [ main ]
+
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository_owner }}/${{ github.repository_name }}
+
+
+jobs:
+  extract-docker-tags:
+    runs-on: ubuntu-latest
+    outputs:
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+    steps:
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/base
+
+  build-base-docker:
+    needs: extract-docker-tags
+    uses: ./.github/workflows/reusable-docker-build-push.yml
+    with:
+      dockerfile: .base.docker
+      registry: ${{ env.REGISTRY }}
+      tags: ${{ needs.extract-docker-tags.outputs.tags }}
+      labels: ${{ needs.extract-docker-tags.outputs.labels }}
+    secrets:
+      registry_username: ${{ github.actor }}
+      registry_password: ${{ secrets.GITHUB_TOKEN }}
+
+  check:
+    needs: [extract-docker-tags, build-base-docker]
+    runs-on: ubuntu-latest
+    container:
+        image: ${{ needs.extract-docker-tags.outputs.tags }}
+        credentials:
+            username: ${{ github.actor }}
+            password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check private repo
+        run: python -m checker --help
+
+  
