@@ -6,41 +6,42 @@ on:
 
 
 jobs:
+  extract-docker-tags:
+    runs-on: ubuntu-latest
+    outputs:
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+    steps:
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/${{ github.repository_name }}/base
+
   build-base-docker:
-    uses: manytask/workflows/.github/workflows/reusable-docker-build-push.yml
+    needs: extract-docker-tags
+    uses: ./.github/workflows/reusable-docker-build-push.yml
     with:
-      dockerfile: .docker
-      target: testenv
-      tags: testenv:${{ github.sha }}
-      artifact: true
-      artifact_name: testenv.tar
+      dockerfile: .base.docker
+      registry: ghcr.io
+      tags: ${{ needs.extract-docker-tags.outputs.tags }}
+      labels: ${{ needs.extract-docker-tags.outputs.labels }}
     secrets:
       registry_username: ${{ github.actor }}
       registry_password: ${{ secrets.GITHUB_TOKEN }}
 
-  check-repo:
-    needs: [build-base-docker]
+  check:
+    needs: [extract-docker-tags, build-base-docker]
     runs-on: ubuntu-latest
+    container:
+        image: ${{ needs.extract-docker-tags.outputs.tags }}
+        credentials:
+            username: ${{ github.actor }}
+            password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download Docker Image Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: testenv.tar
-          path: /tmp/
-
-      - name: Load Docker Image
-        run: |
-          docker load --input /tmp/testenv.tar
-
       - name: Check private repo
-        run: |
-          # RUN: python -m /opt/checker check -- CODE_DIR"
-          docker run \
-            --rm \
-            -v ${{ github.workspace }}:/workspace \
-            -w /workspace \
-            testenv:${{ github.sha }} \
-            python -m checker check /workspace /workspace
+        run: python -m checker --help
+
