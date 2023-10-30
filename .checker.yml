@@ -17,8 +17,8 @@ export:
   default_branch: main
   commit_message: "auto: export new tasks"
   templates: search  # search or create
-  exclude_global_regexps: [".github", "*.docker", ".releaser-ci.yml", ".review"]
-  exclude_task_regexps: [".template", $private_files]
+  patterns: ["**", "**/.gitignore", ".gitlab-ci-students.yml", "**/.lecture"]
+  exclude: "$private_files"
 
 
 # manytask settings, used in scores export (testing)
