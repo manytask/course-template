@@ -5,11 +5,6 @@ on:
     branches: [ main ]
 
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_PREFIX: ${{ github.repository_owner }}/${{ github.repository_name }}
-
-
 jobs:
   extract-docker-tags:
     runs-on: ubuntu-latest
@@ -21,14 +16,14 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/base
+          images: ghcr.io/${{ github.repository_owner }}/${{ github.repository_name }}/base
 
   build-base-docker:
     needs: extract-docker-tags
     uses: ./.github/workflows/reusable-docker-build-push.yml
     with:
       dockerfile: .base.docker
-      registry: ${{ env.REGISTRY }}
+      registry: ghcr.io
       tags: ${{ needs.extract-docker-tags.outputs.tags }}
       labels: ${{ needs.extract-docker-tags.outputs.labels }}
     secrets:
@@ -50,4 +45,3 @@ jobs:
       - name: Check private repo
         run: python -m checker --help
 
-  
