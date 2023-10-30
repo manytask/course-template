@@ -5,36 +5,28 @@ on:
     branches: [ main ]
 
 
-jobs:
-  extract-docker-tags:
-    runs-on: ubuntu-latest
-    outputs:
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-    steps:
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository }}/base
+env:
+  REGISTRY: ghcr.io
+  IMAGE_BASE_NAME: ${{ github.repository }}/base
+  IMAGE_TAG: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || github.sha }}
 
+
+jobs:
   build-base-docker:
-    needs: extract-docker-tags
     uses: ./.github/workflows/reusable-docker-build-push.yml
     with:
       dockerfile: .base.docker
-      registry: ghcr.io
-      tags: ${{ needs.extract-docker-tags.outputs.tags }}
-      labels: ${{ needs.extract-docker-tags.outputs.labels }}
+      registry: ${{ env.REGISTRY }}
+      tags: ${{ env.REGISTRY }}/${{ env.IMAGE_BASE_NAME }}:${{ env.IMAGE_TAG }}
     secrets:
       registry_username: ${{ github.actor }}
       registry_password: ${{ secrets.GITHUB_TOKEN }}
 
   check:
-    needs: [extract-docker-tags, build-base-docker]
+    needs: [build-base-docker]
     runs-on: ubuntu-latest
     container:
-        image: ${{ needs.extract-docker-tags.outputs.tags }}
+        image: ${{ env.REGISTRY }}/${{ env.IMAGE_BASE_NAME }}:${{ env.IMAGE_TAG }}
         credentials:
             username: ${{ github.actor }}
             password: ${{ secrets.GITHUB_TOKEN }}
