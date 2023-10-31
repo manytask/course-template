@@ -13,9 +13,10 @@ jobs:
   build-base-docker:
     uses: ./.github/workflows/reusable-docker-build-push.yml
     with:
-      dockerfile: .base.docker
+      dockerfile: .docker
+      target: testenv
       registry: ghcr.io
-      tags: ghcr.io/${{ github.repository }}/base:${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || github.sha }}
+      tags: ghcr.io/${{ github.repository }}/testenv:${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || github.sha }}
     secrets:
       registry_username: ${{ github.actor }}
       registry_password: ${{ secrets.GITHUB_TOKEN }}
@@ -24,7 +25,7 @@ jobs:
     needs: [build-base-docker]
     runs-on: ubuntu-latest
     container:
-        image: ghcr.io/${{ github.repository }}/base:${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || github.sha }}
+        image: ghcr.io/${{ github.repository }}/testenv:${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || github.sha }}
         credentials:
             username: ${{ github.actor }}
             password: ${{ secrets.GITHUB_TOKEN }}
@@ -33,5 +34,5 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Check private repo
-        run: python -m checker --help
+        run: python -m /opt/checker --help
 
