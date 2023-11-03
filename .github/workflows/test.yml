@@ -17,6 +17,7 @@ jobs:
       target: testenv
       registry: ghcr.io
       tags: ghcr.io/${{ github.repository }}/testenv:${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || github.sha }}
+      push: true
     secrets:
       registry_username: ${{ github.actor }}
       registry_password: ${{ secrets.GITHUB_TOKEN }}
