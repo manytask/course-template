@@ -30,7 +30,7 @@ jobs:
   validate_pr:
     needs: [autolabel_pr]
     if: ${{ always() && !failure() && !cancelled() }}  # no needs jobs are failed or cancelled
-    uses: manytask/workflows/.github/workflows/reusable-validate-pr.yml@main
+    uses: manytask/.github/.github/workflows/reusable-validate-pr.yml@main
     permissions:
       pull-requests: read
       contents: read
