@@ -19,4 +19,3 @@ def test_palindrome_with_mixed_case():
 
 def test_empty_string():
     assert is_palindrome("")
-
