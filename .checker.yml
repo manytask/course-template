@@ -1,3 +1,6 @@
+version: 1
+
+
 # default values for all tasks, can be overwritten in .task.yml params:
 params:
   private_files: ["test_private.py"]
