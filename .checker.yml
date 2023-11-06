@@ -1,11 +1,18 @@
 version: 1
 
 
+# can be overwritten in .task.yml for individual tasks
+structure:
+  # private patterns exclude from export
+  private_patterns: ["**/.*", "**/test_private.py"]
+  # public patterns to export
+  public_patterns: ["tools", "pyproject.toml", ".gitignore", "**/test_public.py", "**/conftest.py"]
+  # explicit patterns allow to change by student
+  allow_to_change_patterns: []
+
+
 # default values for all tasks, can be overwritten in .task.yml params:
 params:
-  private_files: ["test_private.py"]
-  public_files: ["test_public.py", "conftext.py"]
-
   run_typechecking: true
   run_linting: true
   run_testing: true
