@@ -1,7 +1,11 @@
+version: 1
+
+
 settings:
   timezone: Russia/Moscow
   deadlines: hard  # hard/interpolate
   max_submission: 10  # optional
+  submission_penalty: 0.1  # optional
 
 
 schedule:
