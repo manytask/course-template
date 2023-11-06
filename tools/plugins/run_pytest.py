@@ -1,7 +1,23 @@
-from checker import PipelinePlugin
+from __future__ import annotations
+
+from checker.plugins import PluginABC
 
 
-class RunPytestPlugin(PipelinePlugin):
-    name = "run_pytest"
+class RunPytestPlugin(PluginABC):
+    """Plugin for running pytest."""
 
-    def __init__(self,
+    name = 'run_pytest'
+    supports_isolation = True
+
+    class Args(PluginABC.Args):
+        origin: str
+        args: list[str]
+        timeout: int | None = None
+
+    def _run(self, args: Args, *, verbose: bool) -> None:
+        """Run the plugin."""
+        import pytest
+        pytest.main(
+            args.args,
+            args.origin,
+        )
