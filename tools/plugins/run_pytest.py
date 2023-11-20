@@ -6,7 +6,7 @@ from checker.plugins import PluginABC
 class RunPytestPlugin(PluginABC):
     """Plugin for running pytest."""
 
-    name = 'run_pytest'
+    name = "run_pytest"
     supports_isolation = True
 
     class Args(PluginABC.Args):
@@ -17,6 +17,7 @@ class RunPytestPlugin(PluginABC):
     def _run(self, args: Args, *, verbose: bool) -> None:
         """Run the plugin."""
         import pytest
+
         pytest.main(
             args.args,
             args.origin,

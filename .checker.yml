@@ -6,7 +6,7 @@ structure:
   # private patterns exclude from export
   private_patterns: ["**/.*", "**/test_private.py"]
   # public patterns to export
-  public_patterns: ["tools", "pyproject.toml", ".gitignore", "**/test_public.py", "**/conftest.py"]
+  public_patterns: [".gitlab-ci-students.yml", "requirements.txt", "*.md", "**/README.md", "tools", "pyproject.toml", ".gitignore", "**/test_public.py", "**/conftest.py"]
   # explicit patterns allow to change by student
   allow_to_change_patterns: []
 
@@ -31,8 +31,6 @@ export:
   default_branch: main
   commit_message: "chore(auto): export new tasks"
   templates: search  # search or create
-  patterns: ["**", "**/.gitignore", ".gitlab-ci-students.yml", ".docker", "**/.lecture"]
-  exclude: [".*", "${{ private_files }}"]
 
 
 # manytask settings, used in scores export (testing)
@@ -50,34 +48,21 @@ testing:
 
   # run once per repo
   global_pipeline:
-    - name: "Copy global files"
+    - name: "Greening"
       fail: fast  # fast, after_all, never
-      run: "copy_files"
+      run: "run_scrip"
       isolate: false
       args:
-        origin: ${{ REF_DIR }}
-        destination: ${{ TEMP_DIR }}
-        files: ["tools", "pyproject.toml", ".deadlines.yml", ".checker.yml"]
+        origin: ${{ TEMP_DIR }}
+        script: "echo ${{ TEMP_DIR }}"
 
-    - name: "Copy student tasks files"
+    - name: "List temp dir"
       fail: fast  # fast, after_all, never
-      run: "copy_tasks_files"
+      run: "run_scrip"
       isolate: false
       args:
-        origin: ${{ REPO_DIR }}
-        destination: ${{ TEMP_DIR }}
-        tasks: ["${{ TASKS_SUB_PATHS }}"]
-        files: ["*"]
-
-    - name: "Copy reference tests files"
-      fail: fast  # fast, after_all, never
-      run: "copy_tasks_files"
-      isolate: false
-      args:
-        origin: "${{ REPO_DIR }}"
-        destination: "${{ TEMP_DIR }}"
-        tasks: ["${{ TASKS_SUB_PATHS }}"]
-        files: ["*"]
+        origin: ${{ TEMP_DIR }}
+        script: "ls -la ."
 
   # run once per task
   tasks_pipeline:

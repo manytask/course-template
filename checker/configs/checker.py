@@ -1,34 +1,36 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
 from enum import Enum
-from typing import Union
 
-from pydantic import Field, validator, field_validator, ValidationError, AnyUrl
+from pydantic import AnyUrl, Field, RootModel, ValidationError, field_validator
 
-from .utils import YamlLoaderMixin, CustomBaseModel
-from ..exceptions import BadConfig
-
+from .utils import CustomBaseModel, YamlLoaderMixin
 
 ParamType = int | float | str | list[int | float | str | None] | None
 
 
 class CheckerStructureConfig(CustomBaseModel):
-    private_patterns: list[str]
-    public_patterns: list[str]
-    allow_to_change_patterns: list[str]
+    private_patterns: list[str] = Field(default_factory=list)
+    public_patterns: list[str] = Field(default_factory=list)
+    allow_to_change_patterns: list[str] = Field(default_factory=list)
+
+
+class CheckerParametersConfig(RootModel):
+    root: dict[str, ParamType]
+
+    def __getitem__(self, item: str) -> ParamType:
+        return self.root[item]
 
 
 class CheckerExportConfig(CustomBaseModel):
     class TemplateType(Enum):
-        SEARCH = 'search'
-        CREATE = 'create'
+        SEARCH = "search"
+        CREATE = "create"
 
     destination: AnyUrl
-    default_branch: str = 'main'
-    commit_message: str = 'chore(auto): export new tasks'
+    default_branch: str = "main"
+    commit_message: str = "chore(auto): export new tasks"
     templates: TemplateType = TemplateType.SEARCH
-    templates
 
 
 class CheckerManytaskConfig(CustomBaseModel):
@@ -36,13 +38,11 @@ class CheckerManytaskConfig(CustomBaseModel):
     course: str
 
 
-
-
 class PipelineStageConfig(CustomBaseModel):
     class FailType(Enum):
-        FAST = 'fast'
-        AFTER_ALL = 'after_all'
-        NEVER = 'never'
+        FAST = "fast"
+        AFTER_ALL = "after_all"
+        NEVER = "never"
 
     name: str
     run: str
@@ -55,17 +55,16 @@ class PipelineStageConfig(CustomBaseModel):
 
 
 class CheckerTestingConfig(CustomBaseModel):
-
     class ChangesDetectionType(Enum):
-        BRANCH_NAME = 'branch_name'
-        COMMIT_MESSAGE = 'commit_message'
-        LAST_COMMIT_CHANGES = 'last_commit_changes'
-        FILES_CHANGED = 'files_changed'
+        BRANCH_NAME = "branch_name"
+        COMMIT_MESSAGE = "commit_message"
+        LAST_COMMIT_CHANGES = "last_commit_changes"
+        FILES_CHANGED = "files_changed"
 
     class ExecutorType(Enum):
         # DOCKER = 'docker'
-        SANDBOX = 'sandbox'
-        MINIJAIL = 'minijail'
+        SANDBOX = "sandbox"
+        MINIJAIL = "minijail"
 
     changes_detection: ChangesDetectionType = ChangesDetectionType.LAST_COMMIT_CHANGES
     executor: ExecutorType = ExecutorType.MINIJAIL
@@ -77,18 +76,27 @@ class CheckerTestingConfig(CustomBaseModel):
 
 
 class CheckerConfig(CustomBaseModel, YamlLoaderMixin):
-    """Checker configuration."""
+    """
+    Checker configuration.
+    :ivar version: config version
+    :ivar params: default parameters for task pipeline
+    :ivar structure: describe the structure of the repo - private/public and allowed for change files
+    :ivar export: describe export (publishing to public repo)
+    :ivar manytask: describe connection to manytask
+    :ivar testing: describe testing/checking - pipeline, isolation etc
+    """
+
     version: int
 
-    params: dict[str, ParamType] = Field(default_factory=dict)
+    params: CheckerParametersConfig = Field(default_factory=dict)
 
     structure: CheckerStructureConfig
     export: CheckerExportConfig
     manytask: CheckerManytaskConfig
     testing: CheckerTestingConfig
 
-    @field_validator('version')
+    @field_validator("version")
     @classmethod
     def check_version(cls, v: int) -> None:
         if v != 1:
-            raise ValidationError(f'Only version 1 is supported for {cls.__name__}')
+            raise ValidationError(f"Only version 1 is supported for {cls.__name__}")

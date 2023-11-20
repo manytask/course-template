@@ -25,7 +25,7 @@ class PluginABC(ABC):
         try:
             cls.Args(**args)
         except ValidationError as e:
-            raise BadConfig(f'Plugin {cls.name} arguments validation error:\n{e}')
+            raise BadConfig(f"Plugin {cls.name} arguments validation error:\n{e}")
 
     @abstractmethod
     def _run(self, args: Args, *, verbose: bool) -> None:
