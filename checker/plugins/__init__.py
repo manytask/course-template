@@ -1,31 +1,28 @@
 from __future__ import annotations
 
 import importlib
+import importlib.util
 import pkgutil
 import sys
 from pathlib import Path
 from typing import Type
-import importlib.util
 
 from .base import PluginABC  # noqa: F401
 
-
 __all__ = [
     "PluginABC",
-    'load_plugins',
+    "load_plugins",
 ]
 
 
 def get_all_subclasses(cls: Type[PluginABC]) -> set[Type[PluginABC]]:
-    return set(cls.__subclasses__()).union(
-        [s for c in cls.__subclasses__() for s in get_all_subclasses(c)]
-    )
+    return set(cls.__subclasses__()).union([s for c in cls.__subclasses__() for s in get_all_subclasses(c)])
 
 
 def load_plugins(
-        search_directories: list[str | Path] | None = None,
-        *,
-        verbose: bool = False,
+    search_directories: list[str | Path] | None = None,
+    *,
+    verbose: bool = False,
 ) -> dict[str, Type[PluginABC]]:
     """
     Load plugins from the plugins directory.
@@ -37,10 +34,10 @@ def load_plugins(
 
     # force load plugins
     for module_info in pkgutil.iter_modules([str(path) for path in search_directories]):
-        if module_info.name == '__init__':
+        if module_info.name == "__init__":
             continue
         if verbose:
-            print(f'Loading plugin {module_info.name}')
+            print(f"Loading plugin {module_info.name}")
 
         spec = module_info.module_finder.find_spec(fullname=module_info.name)
         module = importlib.util.module_from_spec(spec)
@@ -52,6 +49,6 @@ def load_plugins(
     # collect plugins as abstract class subclasses
     plugins = {}
     for subclass in get_all_subclasses(PluginABC):
-        print(f'Found plugin {subclass.name}, loading...')
+        print(f"Found plugin {subclass.name}, loading...")
         plugins[subclass.name] = subclass
     return plugins

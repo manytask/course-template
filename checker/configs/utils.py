@@ -1,32 +1,32 @@
-from pathlib import Path
 import re
+from pathlib import Path
 from typing import Any
 
-import yaml
 import pydantic
+import yaml
 
 from ..exceptions import BadConfig
 
 
 class CustomBaseModel(pydantic.BaseModel):
-    model_config = pydantic.ConfigDict(extra='forbid')
+    model_config = pydantic.ConfigDict(extra="forbid", validate_default=True)
 
 
 class YamlLoaderMixin:
     @classmethod
-    def from_yaml(cls, path: Path) -> 'YamlLoaderMixin':
+    def from_yaml(cls, path: Path) -> "YamlLoaderMixin":
         try:
             with path.open() as f:
                 return cls(**yaml.safe_load(f))
         except FileNotFoundError:
-            raise BadConfig(f'File {path} not found')
+            raise BadConfig(f"File {path} not found")
         except yaml.YAMLError as e:
-            raise BadConfig(f'Config YAML error:\n{e}')
+            raise BadConfig(f"Config YAML error:\n{e}")
         except pydantic.ValidationError as e:
-            raise BadConfig(f'Config Validation error:\n{e}')
+            raise BadConfig(f"Config Validation error:\n{e}")
 
     def to_yaml(self, path: Path) -> None:
-        with path.open('w') as f:
+        with path.open("w") as f:
             yaml.dump(self.dict(), f)
 
 
@@ -46,7 +46,7 @@ class ParametersResolver:
         self.context = context
         for value in self.context.values():
             if not isinstance(value, (bool, type(None), int, float, str, list)):
-                raise BadConfig(f'Expression resolver does not support {type(value)} type of {value}')
+                raise BadConfig(f"Expression resolver does not support {type(value)} type of {value}")
 
     def _evaluate_single_expression(self, variable):
         """Evaluate a single variable from the context."""
@@ -69,10 +69,7 @@ class ParametersResolver:
         "${{ var }} " -> "1 " (cast to str type)
         """
 
-        return {
-            key: self.resolve_single(value)
-            for key, value in arguments.items()
-        }
+        return {key: self.resolve_single(value) for key, value in arguments.items()}
 
     def resolve_single(self, expression: str) -> Any:
         # If the entire string is one placeholder, return its actual type

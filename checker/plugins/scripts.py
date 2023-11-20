@@ -6,7 +6,7 @@ from .base import PluginABC
 class RunScriptPlugin(PluginABC):
     """Plugin for running scripts."""
 
-    name = 'run_script'
+    name = "run_script"
     supports_isolation = True
 
     class Args(PluginABC.Args):
@@ -17,6 +17,7 @@ class RunScriptPlugin(PluginABC):
     def _run(self, args: Args, *, verbose: bool) -> None:
         """Run the plugin."""
         import subprocess
+
         subprocess.run(
             args.script,
             cwd=args.origin,

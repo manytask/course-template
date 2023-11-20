@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Generator
 from dataclasses import dataclass
-from typing import Type, Any
+from typing import Any, Type
 
-from ..configs import PipelineStageConfig, ParametersResolver
+from ..configs import ParametersResolver, PipelineStageConfig
 from ..exceptions import BadConfig, ExecutionFailedError
 from ..plugins import PluginABC
 
@@ -11,6 +12,7 @@ from ..plugins import PluginABC
 @dataclass
 class GlobalPipelineVariables:
     """Base variables passed in pipeline stages."""
+
     REF_DIR: str
     REPO_DIR: str
     TEMP_DIR: str
@@ -19,11 +21,11 @@ class GlobalPipelineVariables:
 
 
 @dataclass
-class TaskPipelineVariables(GlobalPipelineVariables):
+class TaskPipelineVariables:
     """Variables passed in pipeline stages for each task."""
+
     TASK_NAME: str
     TASK_SUB_PATH: str
-
 
 
 @dataclass
@@ -43,9 +45,9 @@ class PipelineRunner:
     """Class encapsulating the pipeline execution logic."""
 
     def __init__(
-            self,
-            pipeline: list[PipelineStageConfig],
-            plugins: dict[str, Type[PluginABC]],
+        self,
+        pipeline: list[PipelineStageConfig],
+        plugins: dict[str, Type[PluginABC]],
     ):
         """
         Init pipeline runner with predefined stages/plugins to use, parameters (placeholders) resolved later.
@@ -68,12 +70,12 @@ class PipelineRunner:
         for pipeline_stage in self.pipeline:
             # validate plugin exists
             if pipeline_stage.run not in self.plugins:
-                raise BadConfig(f'Unknown plugin {pipeline_stage.run} in pipeline stage {pipeline_stage.name}')
+                raise BadConfig(f"Unknown plugin {pipeline_stage.run} in pipeline stage {pipeline_stage.name}")
             plugin = self.plugins[pipeline_stage.run]
 
             # check plugin supports isolation
             if pipeline_stage.isolate and not plugin.supports_isolation:
-                raise BadConfig(f'Plugin {pipeline_stage.run} does not support isolation')
+                raise BadConfig(f"Plugin {pipeline_stage.run} does not support isolation")
 
             # validate args of the plugin (first resolve placeholders)
             if parameters:
@@ -84,23 +86,22 @@ class PipelineRunner:
             if pipeline_stage.run_if and parameters:
                 resolved_run_if = parameters_resolver.resolve_single(pipeline_stage.run_if)
                 if not isinstance(resolved_run_if, bool):
-                    raise BadConfig(f'Invalid run_if condition {pipeline_stage.run_if} in pipeline stage {pipeline_stage.name}')
+                    raise BadConfig(
+                        f"Invalid run_if condition {pipeline_stage.run_if} in pipeline stage {pipeline_stage.name}"
+                    )
 
-    def run(self, parameters: dict[str, Any]) -> None:
+    def run(self, parameters: dict[str, Any]) -> Generator[PipelineStageResult]:
         parameters_resolver = ParametersResolver(parameters)
 
-        pipeline_stages_results: list[PipelineStageResult] = []
         for pipeline_stage in self.pipeline:
             # resolve run condition if any; skip if run_if=False
             if pipeline_stage.run_if:
                 resolved_run_if = parameters_resolver.resolve_single(pipeline_stage.run_if)
                 if not resolved_run_if:
-                    pipeline_stages_results.append(
-                        PipelineStageResult(
-                            failed=False,
-                            skipped=True,
-                            output='',
-                        )
+                    yield PipelineStageResult(
+                        failed=False,
+                        skipped=True,
+                        output="",
                     )
                     continue
 
@@ -114,21 +115,16 @@ class PipelineRunner:
             try:
                 plugin.run(resolved_args)
             except ExecutionFailedError as e:
-                pipeline_stages_results.append(
-                    PipelineStageResult(
-                        failed=True,
-                        skipped=False,
-                        output=e.output,
-                    )
+                yield PipelineStageResult(
+                    failed=True,
+                    skipped=False,
+                    output=e.output,
                 )
                 if pipeline_stage.fail == PipelineStageConfig.FailType.FAST:
                     break
 
-
-            pipeline_stages_results.append(
-                PipelineStageResult(
-                    failed=False,
-                    skipped=False,
-                    output='',
-                )
+            yield PipelineStageResult(
+                failed=False,
+                skipped=False,
+                output="",
             )
