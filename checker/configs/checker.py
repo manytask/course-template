@@ -6,7 +6,7 @@ from pydantic import AnyUrl, Field, RootModel, ValidationError, field_validator
 
 from .utils import CustomBaseModel, YamlLoaderMixin
 
-ParamType = int | float | str | list[int | float | str | None] | None
+ParamType = bool | int | float | str | list[int | float | str | None] | None
 
 
 class CheckerStructureConfig(CustomBaseModel):
@@ -20,6 +20,10 @@ class CheckerParametersConfig(RootModel):
 
     def __getitem__(self, item: str) -> ParamType:
         return self.root[item]
+
+    @property
+    def __dict__(self) -> dict[str, ParamType]:
+        return self.root
 
 
 class CheckerExportConfig(CustomBaseModel):

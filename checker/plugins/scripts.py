@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pydantic import FilePath, DirectoryPath, validator, field_validator
+
 from .base import PluginABC
 
 

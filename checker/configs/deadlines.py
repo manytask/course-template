@@ -57,7 +57,6 @@ class DeadlinesTaskConfig(CustomBaseModel):
     task: str
 
     enabled: bool = True
-    tags: list[str] = Field(default_factory=list)
 
     score: int
     bonus: int = 0
@@ -74,7 +73,6 @@ class DeadlinesGroupConfig(CustomBaseModel):
     group: str
 
     enabled: bool = True
-    tags: list[str] = []
 
     start: datetime
     steps: dict[float, datetime | timedelta] = Field(default_factory=dict)
@@ -125,6 +123,32 @@ class DeadlinesConfig(CustomBaseModel, YamlLoaderMixin):
 
     settings: DeadlinesSettingsConfig
     schedule: list[DeadlinesGroupConfig]
+
+    def get_groups(
+            self,
+            enabled: bool | None = None,
+    ) -> list[DeadlinesGroupConfig]:
+        groups = [group for group in self.schedule]
+
+        if enabled is not None:
+            groups = [group for group in groups if group.enabled == enabled]
+
+        # TODO: check time
+
+        return groups
+
+    def get_tasks(
+            self,
+            enabled: bool | None = None,
+    ) -> list[DeadlinesTaskConfig]:
+        tasks = [task for group in self.get_groups(enabled=enabled) for task in group.tasks]
+
+        if enabled is not None:
+            tasks = [task for task in tasks if task.enabled == enabled]
+
+        # TODO: check time
+
+        return tasks
 
     @field_validator("version")
     @classmethod

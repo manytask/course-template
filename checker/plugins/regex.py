@@ -1,3 +1,5 @@
+from pydantic import DirectoryPath
+
 from .base import PluginABC
 
 

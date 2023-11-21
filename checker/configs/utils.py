@@ -48,7 +48,7 @@ class ParametersResolver:
             if not isinstance(value, (bool, type(None), int, float, str, list)):
                 raise BadConfig(f"Expression resolver does not support {type(value)} type of {value}")
 
-    def _evaluate_single_expression(self, variable):
+    def _evaluate_single_expression(self, variable: Any) -> Any:
         """Evaluate a single variable from the context."""
         if variable in self.context:
             return self.context[variable]
@@ -69,9 +69,15 @@ class ParametersResolver:
         "${{ var }} " -> "1 " (cast to str type)
         """
 
-        return {key: self.resolve_single(value) for key, value in arguments.items()}
+        return {key: self.resolve_single_param(value) for key, value in arguments.items()}
 
-    def resolve_single(self, expression: str) -> Any:
+    def resolve_single_param(self, expression: str | list[str]) -> Any:
+        if isinstance(expression, list):
+            return [self.resolve_single_string(item) for item in expression]
+        else:
+            return self.resolve_single_string(expression)
+
+    def resolve_single_string(self, expression: str) -> Any:
         # If the entire string is one placeholder, return its actual type
         full_match = self.full_pattern.fullmatch(expression)
         if full_match:

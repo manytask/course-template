@@ -1,3 +1,5 @@
+from pydantic import AnyUrl
+
 from .base import PluginABC
 
 
@@ -10,7 +12,7 @@ class CheckGitlabMergeRequestPlugin(PluginABC):
     class Args(PluginABC.Args):
         token: str
         task_dir: str
-        repo_url: str
+        repo_url: AnyUrl
         requre_approval: bool = False
         search_for_score: bool = False
 

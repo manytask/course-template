@@ -35,5 +35,4 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Check private repo
-        run: python -m /opt/checker --help
-
+        run: python -m /opt/checker check -- ${{ github.workspace }}

@@ -83,8 +83,8 @@ class PipelineRunner:
                 plugin.validate_args(resolved_args)
 
             # validate run_if condition
-            if pipeline_stage.run_if and parameters:
-                resolved_run_if = parameters_resolver.resolve_single(pipeline_stage.run_if)
+            if parameters and pipeline_stage.run_if:
+                resolved_run_if = parameters_resolver.resolve_single_string(pipeline_stage.run_if)
                 if not isinstance(resolved_run_if, bool):
                     raise BadConfig(
                         f"Invalid run_if condition {pipeline_stage.run_if} in pipeline stage {pipeline_stage.name}"
@@ -96,7 +96,7 @@ class PipelineRunner:
         for pipeline_stage in self.pipeline:
             # resolve run condition if any; skip if run_if=False
             if pipeline_stage.run_if:
-                resolved_run_if = parameters_resolver.resolve_single(pipeline_stage.run_if)
+                resolved_run_if = parameters_resolver.resolve_single_string(pipeline_stage.run_if)
                 if not resolved_run_if:
                     yield PipelineStageResult(
                         failed=False,

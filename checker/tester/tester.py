@@ -50,7 +50,7 @@ class Tester:
 
         self.plugins = load_plugins(self.testing_config.search_plugins, verbose=verbose)
         self.global_pipeline = PipelineRunner(self.testing_config.global_pipeline, self.plugins)
-        self.task_pipeline = PipelineRunner(self.testing_config.task_pipeline, self.plugins)
+        self.task_pipeline = PipelineRunner(self.testing_config.tasks_pipeline, self.plugins)
 
         self.repository_dir = self.course.repository_root
         self.reference_dir = self.course.reference_root
@@ -62,36 +62,51 @@ class Tester:
         self.dry_run = dry_run
 
     def validate(self) -> None:
+        # get all tasks
+        tasks = self.course.get_tasks(enabled=True)
+
         # validate global pipeline (only default params and variables available)
+        print("- global pipeline...")
         global_variables = GlobalPipelineVariables(
             REF_DIR=self.reference_dir.absolute().as_posix(),
             REPO_DIR=self.repository_dir.absolute().as_posix(),
             TEMP_DIR=self.temporary_dir.absolute().as_posix(),
-            TASK_NAMES=[task.name for task in self.course.tasks],
-            TASK_SUB_PATHS=[task.relative_path for task in self.course.tasks],
+            TASK_NAMES=[task.name for task in tasks],
+            TASK_SUB_PATHS=[task.relative_path for task in tasks],
         )
         global_parameters = self.default_params.__dict__ | global_variables.__dict__
         self.global_pipeline.validate(global_parameters)
+        print("  ok")
 
-        for task in self.course.tasks:
+        for task in tasks:
             # validate task with global + task-specific params
+            print(f"- task {task.name} pipeline...")
             task_variables = TaskPipelineVariables(
                 TASK_NAME=task.name,
                 TASK_SUB_PATH=task.relative_path,
             )
+            task_specific_params = task.config.params if task.config and task.config.params else {}
             task_parameters = (
-                self.default_params.__dict__ | task.parameters | global_variables.__dict__ | task_variables.__dict__
+                self.default_params.__dict__ |
+                task_specific_params |
+                global_variables.__dict__ |
+                task_variables.__dict__
             )
+            # TODO: read from config task specific pipeline
             self.task_pipeline.validate(task_parameters)
+            print("  ok")
 
     def run(self) -> Generator[float]:
         # run global pipeline
         print("Running global pipeline")
+
+
 
         for task in self.course.tasks:
             # run task pipeline
             print(f"Running pipeline for <{task.name}> task")
 
     def __del__(self) -> None:
-        if self.cleanup:
+        # if self.cleanup:
+        if self.__dict__.get("cleanup"):
             self._temporary_dir_manager.cleanup()

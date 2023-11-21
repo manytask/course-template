@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pydantic import DirectoryPath, Field
+
 from checker.plugins import PluginABC
 
 
@@ -11,7 +13,7 @@ class RunPytestPlugin(PluginABC):
 
     class Args(PluginABC.Args):
         origin: str
-        args: list[str]
+        args: list[str] = Field(default_factory=list)
         timeout: int | None = None
 
     def _run(self, args: Args, *, verbose: bool) -> None:

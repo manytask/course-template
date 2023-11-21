@@ -3,11 +3,11 @@ version: 1
 
 # can be overwritten in .task.yml for individual tasks
 structure:
-  # private patterns exclude from export
-  private_patterns: ["**/.*", "**/test_private.py"]
-  # public patterns to export
+  # public patterns: include in export, overwrite during testing
   public_patterns: [".gitlab-ci-students.yml", "requirements.txt", "*.md", "**/README.md", "tools", "pyproject.toml", ".gitignore", "**/test_public.py", "**/conftest.py"]
-  # explicit patterns allow to change by student
+  # private patterns: exclude from export, overwrite during testing
+  private_patterns: ["**/.*", "**/test_private.py"]
+  # allow to change: exported, NOT overwritten during testing
   allow_to_change_patterns: []
 
 
@@ -48,9 +48,9 @@ testing:
 
   # run once per repo
   global_pipeline:
-    - name: "Greening"
+    - name: "Greeting"
       fail: fast  # fast, after_all, never
-      run: "run_scrip"
+      run: "run_script"
       isolate: false
       args:
         origin: ${{ TEMP_DIR }}
@@ -58,7 +58,7 @@ testing:
 
     - name: "List temp dir"
       fail: fast  # fast, after_all, never
-      run: "run_scrip"
+      run: "run_script"
       isolate: false
       args:
         origin: ${{ TEMP_DIR }}
@@ -75,13 +75,13 @@ testing:
         regexps: ["exit(0)"]
 
     - name: "Run linter"
-      run_if: ${{ run_linter }}
+      run_if: ${{ run_linting }}
       fail: after_all  # fast, after_all, never
       run: "run_script"
       isolate: true
       args:
         origin: "${{ TEMP_DIR }}/${{ TASK_SUB_PATH }}"
-        script: "python -m ruff --config=${{ REPO_DIR }}/pyproject.toml ${{ TASK_DIR }}"
+        script: "python -m ruff --config=${{ REPO_DIR }}/pyproject.toml ${{ TEMP_DIR }}/${{ TASK_SUB_PATH }}"
 
     - name: "Run typechecker"
       run_if: ${{ run_typechecking }}
@@ -90,7 +90,7 @@ testing:
       isolate: true
       args:
         origin: "${{ TEMP_DIR }}/${{ TASK_SUB_PATH }}"
-        script: "python -m mypy --config-file=${{ REPO_DIR }}/pyproject.toml ${{ TASK_DIR }}"
+        script: "python -m mypy --config-file=${{ REPO_DIR }}/pyproject.toml ${{ TEMP_DIR }}/${{ TASK_SUB_PATH }}"
 
     - name: "Collect tests"
       run_if: ${{ run_testing }}
@@ -99,7 +99,7 @@ testing:
       isolate: true
       args:
         origin: "${{ TEMP_DIR }}/${{ TASK_SUB_PATH }}"
-        script: "python -m pytest --tb=no -qq --collect-only ${{ TASK_DIR }}"
+        script: "python -m pytest --tb=no -qq --collect-only ${{ TEMP_DIR }}/${{ TASK_SUB_PATH }}"
         timeout: ${{ timeout }}
 
     - name: "Run tests"
@@ -109,17 +109,17 @@ testing:
       isolate: true
       args:
         origin: "${{ TEMP_DIR }}/${{ TASK_SUB_PATH }}"
-        script: "python -m pytest -qq ${{ TASK_DIR }}"
+        script: "python -m pytest -qq ${{ TEMP_DIR }}/${{ TASK_SUB_PATH }}"
         timeout: ${{ timeout }}
 
-    - name: "Run Merge Request checks"
-      run_if: ${{ run_merge_request_checks }}
-      fail: after_all  # fast, after_all, never
-      run: "check_gitlab_merge_request"
-      isolate: false
-      args:
-        token: ${{ GITLAB_API_TOKEN }}
-        task_dir: ${{ TASK_SUB_PATH }}
-        repo_url: ${{ REPOSITORY_URL }}
-        requre_approval: ${{ require_merge_request_approval }}
-        search_for_score: ${{ search_for_merge_request_score }}
+#    - name: "Run Merge Request checks"
+#      run_if: ${{ run_merge_request_checks }}
+#      fail: after_all  # fast, after_all, never
+#      run: "check_gitlab_merge_request"
+#      isolate: false
+#      args:
+#        token: ${{ GITLAB_API_TOKEN }}
+#        task_dir: ${{ TASK_SUB_PATH }}
+#        repo_url: ${{ REPOSITORY_URL }}
+#        requre_approval: ${{ require_merge_request_approval }}
+#        search_for_score: ${{ search_for_merge_request_score }}

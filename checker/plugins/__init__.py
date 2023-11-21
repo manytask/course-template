@@ -33,11 +33,12 @@ def load_plugins(
     search_directories = [Path(__file__).parent] + search_directories  # add local plugins first
 
     # force load plugins
+    print("Loading plugins...")
     for module_info in pkgutil.iter_modules([str(path) for path in search_directories]):
         if module_info.name == "__init__":
             continue
         if verbose:
-            print(f"Loading plugin {module_info.name}")
+            print(f"- {module_info.name} from {module_info.module_finder.path}")
 
         spec = module_info.module_finder.find_spec(fullname=module_info.name)
         module = importlib.util.module_from_spec(spec)
@@ -49,6 +50,7 @@ def load_plugins(
     # collect plugins as abstract class subclasses
     plugins = {}
     for subclass in get_all_subclasses(PluginABC):
-        print(f"Found plugin {subclass.name}, loading...")
         plugins[subclass.name] = subclass
+    if verbose:
+        print(f"Loaded: {', '.join(plugins.keys())}")
     return plugins
