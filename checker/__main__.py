@@ -8,6 +8,8 @@ import click
 import yaml
 from pydantic import ValidationError
 
+from checker.course import Course
+from checker.tester import Tester
 from .configs import CheckerConfig, DeadlinesConfig
 from .exceptions import BadConfig
 from .plugins import load_plugins
@@ -66,35 +68,25 @@ def validate(
         exit(1)
     print("Ok")
 
-    print("Loading plugins...")
+    print("Validating Course Structure (and tasks configs)...")
     try:
-        plugins = load_plugins(checker_config.testing.search_plugins)
-        print(f"Loaded {len(plugins)} plugins\n", plugins)
+        course = Course(checker_config, deadlines_config, root)
+        course.validate()
     except BadConfig as e:
-        print("Plugin Loading Failed")
+        print("Course Validation Failed")
         print(e)
         exit(1)
     print("Ok")
 
-    print("Validating global pipeline...")
+    print("Validating tester...")
     try:
-        pipeline = PipelineRunner(checker_config.testing.global_pipeline, plugins)
-        pipeline.validate(parameters=None)  # TODO: add parameters
+        tester = Tester(course, checker_config, verbose=verbose)
+        tester.validate()
     except BadConfig as e:
-        print("Pipeline Validation Failed")
+        print("Tester Validation Failed")
         print(e)
         exit(1)
     print("Ok")
-
-    print("Searching tasks...")
-    file_tasks_folders = [task.parent for task in root.glob("**/.task.yml") if task.is_file()]
-    print(f"Found {len(file_tasks_folders)} tasks")
-
-    # print("Validating tasks...")
-
-    print("TEST RUN PIPELINE")
-    pipeline = PipelineRunner(checker_config.testing.global_pipeline, plugins)
-    pipeline.validate(parameters=None)  # TODO: add parameters
 
 
 @cli.command()
