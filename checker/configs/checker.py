@@ -10,9 +10,10 @@ ParamType = bool | int | float | str | list[int | float | str | None] | None
 
 
 class CheckerStructureConfig(CustomBaseModel):
-    private_patterns: list[str] = Field(default_factory=list)
-    public_patterns: list[str] = Field(default_factory=list)
-    allow_to_change_patterns: list[str] = Field(default_factory=list)
+    ignore_patterns: list[str] | None = None
+    private_patterns: list[str] | None = None
+    public_patterns: list[str] | None = None
+    # TODO: add check "**" is not allowed
 
 
 class CheckerParametersConfig(RootModel):
@@ -55,7 +56,6 @@ class PipelineStageConfig(CustomBaseModel):
 
     run_if: str | None = None
     fail: FailType = FailType.FAST
-    isolate: bool = True
 
 
 class CheckerTestingConfig(CustomBaseModel):
@@ -65,13 +65,7 @@ class CheckerTestingConfig(CustomBaseModel):
         LAST_COMMIT_CHANGES = "last_commit_changes"
         FILES_CHANGED = "files_changed"
 
-    class ExecutorType(Enum):
-        # DOCKER = 'docker'
-        SANDBOX = "sandbox"
-        MINIJAIL = "minijail"
-
     changes_detection: ChangesDetectionType = ChangesDetectionType.LAST_COMMIT_CHANGES
-    executor: ExecutorType = ExecutorType.MINIJAIL
 
     search_plugins: list[str] = Field(default_factory=list)
 
