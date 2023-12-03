@@ -10,8 +10,9 @@ from pydantic import ValidationError
 
 from checker.course import Course
 from checker.tester import Tester
+from checker.utils import print_info
 from .configs import CheckerConfig, DeadlinesConfig
-from .exceptions import BadConfig
+from .exceptions import BadConfig, TestingError
 from .plugins import load_plugins
 from .tester.pipeline import PipelineRunner
 
@@ -58,35 +59,35 @@ def validate(
     3. Check all tasks are valid and consistent with the deadlines.
     """
 
-    print("Validating configuration files...")
+    print_info("Validating configuration files...")
     try:
         checker_config = CheckerConfig.from_yaml(ctx.obj["course_config_path"])
         deadlines_config = DeadlinesConfig.from_yaml(ctx.obj["deadlines_config_path"])
     except BadConfig as e:
-        print("Configuration Failed")
-        print(e)
+        print_info("Configuration Failed", color='red')
+        print_info(e)
         exit(1)
-    print("Ok")
+    print_info("Ok", color='green')
 
-    print("Validating Course Structure (and tasks configs)...")
+    print_info("Validating Course Structure (and tasks configs)...")
     try:
         course = Course(checker_config, deadlines_config, root)
         course.validate()
     except BadConfig as e:
-        print("Course Validation Failed")
-        print(e)
+        print_info("Course Validation Failed", color='red')
+        print_info(e)
         exit(1)
-    print("Ok")
+    print_info("Ok", color='green')
 
-    print("Validating tester...")
+    print_info("Validating tester...")
     try:
         tester = Tester(course, checker_config, verbose=verbose)
         tester.validate()
     except BadConfig as e:
-        print("Tester Validation Failed")
-        print(e)
+        print_info("Tester Validation Failed", color='red')
+        print_info(e)
         exit(1)
-    print("Ok")
+    print_info("Ok", color='green')
 
 
 @cli.command()
@@ -117,15 +118,17 @@ def check(
     checker_config = CheckerConfig.from_yaml(ctx.obj["course_config_path"])
     deadlines_config = DeadlinesConfig.from_yaml(ctx.obj["deadlines_config_path"])
 
-    # TODO: progressbar on paralelize
+    # TODO: progressbar on parallelize
+    course = Course(checker_config, deadlines_config, root)
+
+    tester = Tester(course, checker_config, verbose=verbose, dry_run=dry_run)
 
     try:
-        config_data = yaml.safe_load(Path(config_path).read_text())
-        config = Config.parse_obj(config_data)
-        # Your logic to 'check' based on the configuration goes here.
-        click.echo("Checks completed successfully.")
-    except Exception as e:
-        click.echo(f"An error occurred during the checks: {e}")
+        tester.run()
+    except TestingError as e:
+        print_info("TESTING FAILED", color='red')
+        print_info(e)
+        exit(1)
 
 
 @cli.command()

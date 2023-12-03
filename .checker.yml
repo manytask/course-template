@@ -3,12 +3,14 @@ version: 1
 
 # can be overwritten in .task.yml for individual tasks
 structure:
+  ignore_patterns: ["checker", ".git", ".idea", ".vscode", "__pycache__", ".venv", ".*_cache", "*.pyc"]
   # public patterns: include in export, overwrite during testing
-  public_patterns: [".gitlab-ci-students.yml", "requirements.txt", "*.md", "**/README.md", "tools", "pyproject.toml", ".gitignore", "**/test_public.py", "**/conftest.py"]
+  public_patterns: ["README.md", ".lecture", ".gitlab-ci-students.yml", "requirements.txt", "tools", "pyproject.toml", ".gitignore", "test_public.py", "conftest.py"]
   # private patterns: exclude from export, overwrite during testing
-  private_patterns: ["**/.*", "**/test_private.py"]
+  private_patterns: [".*", "test_private.py"]
   # allow to change: exported, NOT overwritten during testing
-  allow_to_change_patterns: []
+  # TODO: think do we need it?
+#  exceptions_allow_to_change_patterns: []
 
 
 # default values for all tasks, can be overwritten in .task.yml params:
@@ -42,34 +44,37 @@ manytask:
 # settings for Tester, uses .checker.yml and `params` and each task params (in .task.yml)
 testing:
   changes_detection: branch_name  # branch_name, commit_message, last_commit_changes, files_changed
-  executor: sandbox  # sandbox or minijail
 
   search_plugins: ["tools/plugins"]
 
   # run once per repo
   global_pipeline:
-    - name: "Greeting"
-      fail: fast  # fast, after_all, never
-      run: "run_script"
-      isolate: false
-      args:
-        origin: ${{ TEMP_DIR }}
-        script: "echo ${{ TEMP_DIR }}"
-
     - name: "List temp dir"
       fail: fast  # fast, after_all, never
       run: "run_script"
-      isolate: false
       args:
         origin: ${{ TEMP_DIR }}
         script: "ls -la ."
+
+    - name: "Fail never"
+      fail: never  # fast, after_all, never
+      run: "run_script"
+      args:
+        origin: ${{ TEMP_DIR }}
+        script: "false"
+
+    - name: "Greeting"
+      fail: fast  # fast, after_all, never
+      run: "run_script"
+      args:
+        origin: ${{ TEMP_DIR }}
+        script: "echo ${{ TEMP_DIR }}"
 
   # run once per task
   tasks_pipeline:
     - name: "Check forbidden regexps"
       fail: fast  # fast, after_all, never
       run: "check_regexps"
-      isolate: false
       args:
         origin: "${{ TEMP_DIR }}/${{ TASK_SUB_PATH }}"
         regexps: ["exit(0)"]
@@ -78,45 +83,42 @@ testing:
       run_if: ${{ run_linting }}
       fail: after_all  # fast, after_all, never
       run: "run_script"
-      isolate: true
       args:
-        origin: "${{ TEMP_DIR }}/${{ TASK_SUB_PATH }}"
-        script: "python -m ruff --config=${{ REPO_DIR }}/pyproject.toml ${{ TEMP_DIR }}/${{ TASK_SUB_PATH }}"
+        origin: ${{ TEMP_DIR }}
+        script: "python -m ruff --config=pyproject.toml ${{ TASK_SUB_PATH }}"
 
     - name: "Run typechecker"
       run_if: ${{ run_typechecking }}
       fail: after_all  # fast, after_all, never
       run: "run_script"
-      isolate: true
       args:
-        origin: "${{ TEMP_DIR }}/${{ TASK_SUB_PATH }}"
-        script: "python -m mypy --config-file=${{ REPO_DIR }}/pyproject.toml ${{ TEMP_DIR }}/${{ TASK_SUB_PATH }}"
+        origin: ${{ TEMP_DIR }}
+        script: "python -m mypy --config-file=pyproject.toml ${{ TASK_SUB_PATH }}"
 
     - name: "Collect tests"
       run_if: ${{ run_testing }}
       fail: after_all  # fast, after_all, never
       run: "run_script"
-      isolate: true
       args:
-        origin: "${{ TEMP_DIR }}/${{ TASK_SUB_PATH }}"
-        script: "python -m pytest --tb=no -qq --collect-only ${{ TEMP_DIR }}/${{ TASK_SUB_PATH }}"
+        origin: ${{ TEMP_DIR }}
+        script: "python -m pytest --tb=no -qq --collect-only ${{ TASK_SUB_PATH }}"
         timeout: ${{ timeout }}
+#        isolate: true
 
     - name: "Run tests"
       run_if: ${{ run_testing }}
       fail: after_all  # fast, after_all, never
-      run: "run_pytest"
-      isolate: true
+      run: "run_script"
       args:
-        origin: "${{ TEMP_DIR }}/${{ TASK_SUB_PATH }}"
-        script: "python -m pytest -qq ${{ TEMP_DIR }}/${{ TASK_SUB_PATH }}"
+        origin: ${{ TEMP_DIR }}
+        script: "python -m pytest --no-header ${{ TASK_SUB_PATH }}"
         timeout: ${{ timeout }}
+#        isolate: true
 
 #    - name: "Run Merge Request checks"
 #      run_if: ${{ run_merge_request_checks }}
 #      fail: after_all  # fast, after_all, never
 #      run: "check_gitlab_merge_request"
-#      isolate: false
 #      args:
 #        token: ${{ GITLAB_API_TOKEN }}
 #        task_dir: ${{ TASK_SUB_PATH }}

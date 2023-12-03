@@ -10,21 +10,19 @@ class CheckerException(Exception):
     pass
 
 
-class ValidationError(CheckerException):
+class CheckerValidationError(CheckerException):
     """Base validation error of configs, project structure, etc."""
 
     pass
 
 
-class BadConfig(ValidationError):
+class BadConfig(CheckerValidationError):
     """All configs exceptions: deadlines, checker and tasks configs"""
-
     pass
 
 
-class BadStructure(ValidationError):
+class BadStructure(CheckerValidationError):
     """Course structure exception: some files are missing, etc."""
-
     pass
 
 
