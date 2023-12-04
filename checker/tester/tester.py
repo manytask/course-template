@@ -139,7 +139,6 @@ class Tester:
             task_parameters = self._get_task_pipeline_parameters(global_parameters, task)
             # TODO: read from config task specific pipeline
             task_pipeline_result: PipelineResult = self.task_pipeline.run(task_parameters, dry_run=self.dry_run)
-            # TODO: remove dry_run
             print_info(str(task_pipeline_result), color='pink')
 
     def __del__(self) -> None:

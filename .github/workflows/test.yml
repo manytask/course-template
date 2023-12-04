@@ -5,19 +5,14 @@ on:
     branches: [ main ]
 
 
-permissions:
-  packages: write
-
-
 jobs:
   build-base-docker:
     uses: ./.github/workflows/reusable-docker-build-push.yml
     with:
       dockerfile: .docker
       target: testenv
-      registry: ghcr.io
-      tags: ghcr.io/${{ github.repository }}/testenv:${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || github.sha }}
-      push: true
+      tags: testenv:${{ github.sha }}
+      artifact_name: testenv
     secrets:
       registry_username: ${{ github.actor }}
       registry_password: ${{ secrets.GITHUB_TOKEN }}
@@ -25,14 +20,26 @@ jobs:
   check-repo:
     needs: [build-base-docker]
     runs-on: ubuntu-latest
-    container:
-        image: ghcr.io/${{ github.repository }}/testenv:${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || github.sha }}
-        credentials:
-            username: ${{ github.actor }}
-            password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Download Docker Image Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: testenv  # load testenv.tar.gz
+          path: .
+
+      - name: Load Docker Image
+        run: |
+          gzip -d testenv.tar.gz
+          docker load -i testenv.tar
+
       - name: Check private repo
-        run: python -m /opt/checker check -- ${{ github.workspace }}
+        run:
+          # RUN: python -m /opt/checker check -- CODE_DIR"
+          docker run \
+            --rm \
+            -v ${{ github.workspace }}:/workspace \
+            testenv:${{ github.sha }} \
+            "python -m /opt/checker check -- /workspace"
