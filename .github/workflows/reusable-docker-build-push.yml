@@ -34,9 +34,13 @@ on:
         required: false
         default: false
         type: boolean
+      artifact:
+        required: false
+        default: false
+        type: boolean
       artifact_name:
         required: false
-        default: ''
+        default: 'image.tar'
         type: string
 
     secrets:
@@ -80,16 +84,11 @@ jobs:
         # https://github.com/docker/build-push-action/blob/master/docs/advanced/cache.md#cache-backend-api
         cache-from: type=gha
         cache-to: type=gha,mode=max
-
-    - name: Make tar.gz artifact with docker save
-      if: ${{ inputs.artifact_name != '' }}
-      run: |
-        docker save -o ${{ inputs.artifact_name }}.tar ${{ inputs.tags }}
-        tar -czvf ${{ inputs.artifact_name }}.tar.gz ${{ inputs.artifact_name }}.tar
+        outputs: type=local,dest=${{ inputs.artifact_name }}
 
     - name: Upload artifact
-      if: ${{ inputs.artifact_name != '' }}
+      if: ${{ inputs.artifact }}
       uses: actions/upload-artifact@v2
       with:
           name: ${{ inputs.artifact_name }}
-          path: ${{ inputs.artifact_name }}.tar.gz
+          path: ${{ inputs.artifact_name }}

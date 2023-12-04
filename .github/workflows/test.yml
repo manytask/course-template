@@ -12,7 +12,8 @@ jobs:
       dockerfile: .docker
       target: testenv
       tags: testenv:${{ github.sha }}
-      artifact_name: testenv
+      artifact: true
+      artifact_name: testenv.tar
     secrets:
       registry_username: ${{ github.actor }}
       registry_password: ${{ secrets.GITHUB_TOKEN }}
@@ -27,12 +28,11 @@ jobs:
       - name: Download Docker Image Artifact
         uses: actions/download-artifact@v2
         with:
-          name: testenv  # load testenv.tar.gz
+          name: testenv.tar
           path: .
 
       - name: Load Docker Image
         run: |
-          gzip -d testenv.tar.gz
           docker load -i testenv.tar
 
       - name: Check private repo
