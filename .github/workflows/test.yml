@@ -26,14 +26,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download Docker Image Artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: testenv.tar
-          path: .
+          path: /tmp/
 
       - name: Load Docker Image
         run: |
-          docker load -i testenv.tar
+          docker load --input /tmp/testenv.tar
+          docker image ls -a | grep testenv
 
       - name: Check private repo
         run:
