@@ -41,5 +41,6 @@ jobs:
           docker run \
             --rm \
             -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
             testenv:${{ github.sha }} \
-            python -m /opt/checker check -- /workspace
+            python -m checker check -- /workspace
