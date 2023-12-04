@@ -34,10 +34,9 @@ jobs:
       - name: Load Docker Image
         run: |
           docker load --input /tmp/testenv.tar
-          docker image ls -a | grep testenv
 
       - name: Check private repo
-        run:
+        run: |
           # RUN: python -m /opt/checker check -- CODE_DIR"
           docker run \
             --rm \
