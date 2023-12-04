@@ -45,6 +45,9 @@ class PipelineResult:
     failed: bool
     stage_results: list[PipelineStageResult]
 
+    def __bool__(self) -> bool:
+        return not self.failed
+
     def __str__(self) -> str:
         return f'PipelineResult: failed={int(self.failed)}\n' + '\n'.join([f'  {stage_result}' for stage_result in self.stage_results])
 
