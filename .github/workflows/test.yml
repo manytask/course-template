@@ -42,4 +42,4 @@ jobs:
             --rm \
             -v ${{ github.workspace }}:/workspace \
             testenv:${{ github.sha }} \
-            "python -m /opt/checker check -- /workspace"
+            python -m /opt/checker check -- /workspace
