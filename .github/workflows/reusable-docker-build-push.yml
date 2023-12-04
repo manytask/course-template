@@ -82,13 +82,13 @@ jobs:
         cache-to: type=gha,mode=max
 
     - name: Make tar.gz artifact with docker save
-      if: ${{ inputs.artifact != '' }}
+      if: ${{ inputs.artifact_name != '' }}
       run: |
         docker save -o ${{ inputs.artifact_name }}.tar ${{ inputs.tags }}
         tar -czvf ${{ inputs.artifact_name }}.tar.gz ${{ inputs.artifact_name }}.tar
 
     - name: Upload artifact
-      if: ${{ inputs.artifact != '' }}
+      if: ${{ inputs.artifact_name != '' }}
       uses: actions/upload-artifact@v2
       with:
           name: ${{ inputs.artifact_name }}
