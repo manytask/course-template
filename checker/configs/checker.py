@@ -57,6 +57,9 @@ class PipelineStageConfig(CustomBaseModel):
     run_if: str | None = None
     fail: FailType = FailType.FAST
 
+    # save a score to the context with the name `register_score`
+    register_score: str | None = None
+
 
 class CheckerTestingConfig(CustomBaseModel):
     class ChangesDetectionType(Enum):
@@ -71,13 +74,14 @@ class CheckerTestingConfig(CustomBaseModel):
 
     global_pipeline: list[PipelineStageConfig] = Field(default_factory=list)
     tasks_pipeline: list[PipelineStageConfig] = Field(default_factory=list)
+    report_pipeline: list[PipelineStageConfig] = Field(default_factory=list)
 
 
 class CheckerConfig(CustomBaseModel, YamlLoaderMixin):
     """
     Checker configuration.
     :ivar version: config version
-    :ivar params: default parameters for task pipeline
+    :ivar default_params: default parameters for task pipeline
     :ivar structure: describe the structure of the repo - private/public and allowed for change files
     :ivar export: describe export (publishing to public repo)
     :ivar manytask: describe connection to manytask
@@ -86,7 +90,7 @@ class CheckerConfig(CustomBaseModel, YamlLoaderMixin):
 
     version: int
 
-    params: CheckerParametersConfig = Field(default_factory=dict)
+    default_params: CheckerParametersConfig = Field(default_factory=dict)
 
     structure: CheckerStructureConfig
     export: CheckerExportConfig

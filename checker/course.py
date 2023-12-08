@@ -37,12 +37,15 @@ class Course:
         deadlines_config: DeadlinesConfig,
         repository_root: Path,
         reference_root: Path | None = None,
+        username: str | None = None,
     ):
         self.checker = checker_config
         self.deadlines = deadlines_config
 
         self.repository_root = repository_root
         self.reference_root = reference_root or repository_root
+
+        self.username = username or "unknown"
 
         self.potential_groups = {group.name: group for group in self._search_potential_groups(self.repository_root)}
         self.potential_tasks = {task.name: task for group in self.potential_groups.values() for task in group.tasks}

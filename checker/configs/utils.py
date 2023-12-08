@@ -39,27 +39,41 @@ class ParametersResolver:
 
     """
 
-    pattern = re.compile(r"\${{\s*(\w+)\s*}}", re.DOTALL)  # "some ${{ var }} string"
-    full_pattern = re.compile(r"^\${{\s*(\w+)\s*}}$", re.DOTALL)  # "${{ var }}"
+    pattern = re.compile(r"\${{\s*(!?\w+)\s*}}", re.DOTALL)  # "some ${{ var }} string"
+    full_pattern = re.compile(r"^\${{\s*(!?\w+)\s*}}$", re.DOTALL)  # "${{ var }}"
 
     def __init__(self, context: dict[str, Any]):
-        self.context = context
-        for value in self.context.values():
+        self.default_context = context
+        self._validate_context(context)
+
+    def _validate_context(self, context: dict[str, Any]) -> None:
+        for value in context.values():
             if not isinstance(value, (bool, type(None), int, float, str, list)):
                 raise BadConfig(f"Expression resolver does not support {type(value)} type of {value}")
 
-    def _evaluate_single_expression(self, variable: Any) -> Any:
+    def _evaluate_single_expression(self, variable: Any, context: dict[str, Any]) -> Any:
         """Evaluate a single variable from the context."""
-        if variable in self.context:
-            return self.context[variable]
+        # TODO: fix ! - not expression
+        not_in_expression = '!' in variable
+        variable = variable.replace("!", "")
+
+        if variable in context:
+            result = context[variable]
+            if not_in_expression:
+                # Note: cast to bool for not expression
+                # raise BadConfig(f"Expression resolver does not support {type(result)} type of {result}")
+                return not result
+            else:
+                return result
         else:
             raise BadConfig(f"Variable '{variable}' not found in context")
 
-    def resolve(self, arguments: dict[str, Any]) -> dict[str, Any]:
+    def resolve(self, arguments: dict[str, Any], extra_context: dict[str, Any]) -> dict[str, Any]:
         """
         Resolve the arguments.
         :param arguments: arguments with expressions to resolve,
                           some string with placeholders e.g. "Some ${{ var }} string"
+        :param extra_context: extra context to use for resolving
         :return: resolved expression string, resolved if only expression found or original expression if no placeholders
 
         Examples (individual expressions), where var = 1, var2 = 2 ints:
@@ -68,24 +82,29 @@ class ParametersResolver:
         "${{ var }}" -> 1 (int type)
         "${{ var }} " -> "1 " (cast to str type)
         """
+        return {key: self.resolve_single_param(value, extra_context) for key, value in arguments.items()}
 
-        return {key: self.resolve_single_param(value) for key, value in arguments.items()}
-
-    def resolve_single_param(self, expression: str | list[str]) -> Any:
+    def resolve_single_param(self, expression: Any | list[Any], extra_context: dict[str, Any]) -> Any:
         if isinstance(expression, list):
-            return [self.resolve_single_string(item) for item in expression]
+            return [self.resolve_single_param(item, extra_context) for item in expression]
         else:
-            return self.resolve_single_string(expression)
+            if isinstance(expression, str):
+                return self.resolve_single_string(expression, extra_context)
+            else:
+                return expression
 
-    def resolve_single_string(self, expression: str) -> Any:
+    def resolve_single_string(self, expression: str, extra_context: dict[str, Any]) -> Any:
+        self._validate_context(extra_context)
+        context = self.default_context | extra_context
+
         # If the entire string is one placeholder, return its actual type
         full_match = self.full_pattern.fullmatch(expression)
         if full_match:
-            return self._evaluate_single_expression(full_match.group(1))
+            return self._evaluate_single_expression(full_match.group(1), context)
 
         # If not, substitute and return the result as a string
         def substitute(match: re.Match) -> str:
-            return str(self._evaluate_single_expression(match.group(1)))
+            return str(self._evaluate_single_expression(match.group(1), context))
 
         resolved_expression = self.pattern.sub(substitute, expression)
         return resolved_expression
