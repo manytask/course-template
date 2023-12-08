@@ -16,6 +16,7 @@ class GlobalPipelineVariables:
     REF_DIR: str
     REPO_DIR: str
     TEMP_DIR: str
+    USERNAME: str
     TASK_NAMES: list[str]
     TASK_SUB_PATHS: list[str]
 
@@ -74,14 +75,24 @@ class PipelineRunner:
 
         self.verbose = verbose
 
-        self.validate()
+        self.validate(validate_placeholders=False)
 
-    def validate(self, parameters: dict[str, Any] | None = None) -> None:
+    def validate(
+            self,
+            parameters: dict[str, Any] | None = None,
+            extra_context: dict[str, Any] | None = None,
+            validate_placeholders: bool = True,
+    ) -> None:
         """
         Validate the pipeline configuration.
         :param parameters: parameters for placeholders (if None - no placeholders are checked)
+        :param extra_context: context for placeholders (if None - no placeholders are checked)
+        :param validate_placeholders: if True, validate placeholders in pipeline stages
         """
-        parameters_resolver = ParametersResolver(parameters or {})
+        parameters = parameters or {}
+        extra_context = extra_context if extra_context is not None else {}  # to avoid copying {} when using or
+
+        parameters_resolver = ParametersResolver(parameters)
 
         for pipeline_stage in self.pipeline:
             # validate plugin exists
@@ -90,19 +101,30 @@ class PipelineRunner:
             plugin_class = self.plugins[pipeline_stage.run]
 
             # validate args of the plugin (first resolve placeholders)
-            if parameters:
-                resolved_args = parameters_resolver.resolve(pipeline_stage.args)
+            if validate_placeholders:
+                resolved_args = parameters_resolver.resolve(pipeline_stage.args, extra_context=extra_context)
                 plugin_class.validate(resolved_args)
 
             # validate run_if condition
-            if parameters and pipeline_stage.run_if:
-                resolved_run_if = parameters_resolver.resolve_single_string(pipeline_stage.run_if)
+            if validate_placeholders and pipeline_stage.run_if:
+                resolved_run_if = parameters_resolver.resolve_single_string(pipeline_stage.run_if, extra_context=extra_context)
                 if not isinstance(resolved_run_if, bool):
                     raise BadConfig(
                         f"Invalid run_if condition {pipeline_stage.run_if} in pipeline stage {pipeline_stage.name}"
                     )
 
-    def run(self, parameters: dict[str, Any], *, dry_run: bool = False) -> PipelineResult:
+            # add register_score to context if any
+            if pipeline_stage.register_score:
+                extra_context[pipeline_stage.register_score] = 0.0
+
+    def run(
+            self,
+            parameters: dict[str, Any],
+            extra_context: dict[str, Any] | None = None,
+            *,
+            dry_run: bool = False,
+    ) -> PipelineResult:
+        extra_context = extra_context if extra_context is not None else {}  # to avoid copying {} when using or
         parameters_resolver = ParametersResolver(parameters)
 
         pipeline_stage_results = []
@@ -110,8 +132,8 @@ class PipelineRunner:
         skip_the_rest = False
         for pipeline_stage in self.pipeline:
             # resolve placeholders in arguments
-            resolved_args = parameters_resolver.resolve(pipeline_stage.args)
-            resolved_run_if = parameters_resolver.resolve_single_string(pipeline_stage.run_if) if pipeline_stage.run_if else None
+            resolved_args = parameters_resolver.resolve(pipeline_stage.args, extra_context=extra_context)
+            resolved_run_if = parameters_resolver.resolve_single_string(pipeline_stage.run_if, extra_context=extra_context) if pipeline_stage.run_if else None
 
             print_info(f'-> Running "{pipeline_stage.name}" stage:', color='orange')
             if self.verbose:
@@ -161,7 +183,7 @@ class PipelineRunner:
 
             # run the plugin with executor
             try:
-                output = plugin.run(resolved_args)
+                output = plugin.run(resolved_args, verbose=self.verbose)
                 print_info(output or '[empty output]')
                 print_info('ok!', color='green')
                 pipeline_stage_results.append(PipelineStageResult(
@@ -190,6 +212,10 @@ class PipelineRunner:
                     pass
                 else:
                     assert False, f"Unknown fail type {pipeline_stage.fail}"
+
+            # register score is any
+            if pipeline_stage.register_score:
+                extra_context[pipeline_stage.register_score] = pipeline_stage_results[-1].percentage
 
         return PipelineResult(
             failed=not pipeline_passed,

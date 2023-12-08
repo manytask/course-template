@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-base-docker:
-    uses: ./.github/workflows/reusable-docker-build-push.yml
+    uses: manytask/workflows/.github/workflows/reusable-docker-build-push.yml
     with:
       dockerfile: .docker
       target: testenv
@@ -43,4 +43,4 @@ jobs:
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
             testenv:${{ github.sha }} \
-            python -m checker check -- /workspace
+            python -m checker check /workspace /workspace

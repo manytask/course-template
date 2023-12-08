@@ -8,7 +8,7 @@ import click
 import yaml
 from pydantic import ValidationError
 
-from checker.course import Course
+from checker.course import Course, FileSystemTask
 from checker.tester import Tester
 from checker.utils import print_info
 from .configs import CheckerConfig, DeadlinesConfig
@@ -51,7 +51,7 @@ def validate(
     ctx: click.Context,
     root: Path,
     verbose: bool,
-):
+) -> None:
     """
     Validate the configuration files, plugins and tasks.
     1. Validate the configuration files content.
@@ -92,58 +92,122 @@ def validate(
 
 @cli.command()
 @click.argument("root", type=ClickReadableDirectory, default=".")
+@click.argument("reference_root", type=ClickReadableDirectory, default=".")
 @click.option("-t", "--task", type=str, multiple=True, default=None, help="Task name to check (multiple possible)")
 @click.option("-g", "--group", type=str, multiple=True, default=None, help="Group name to check (multiple possible)")
-@click.option("--no-clean", is_flag=True, help="Clean or not check tmp folders")
 @click.option("-p", "--parallelize", is_flag=True, default=True, help="Execute parallel checking of tasks")
 @click.option("-n", "--num-processes", type=int, default=os.cpu_count(), help="Num of processes parallel checking")
+@click.option("--no-clean", is_flag=True, help="Clean or not check tmp folders")
 @click.option("-v/-s", "--verbose/--silent", is_flag=True, default=True, help="Verbose tests output")
 @click.option("--dry-run", is_flag=True, help="Do not execute anything, only log actions")
 @click.pass_context
 def check(
     ctx: click.Context,
     root: Path,
+    reference_root: Path,
     task: list[str] | None,
     group: list[str] | None,
-    no_clean: bool,
     parallelize: bool,
     num_processes: int,
+    no_clean: bool,
     verbose: bool,
     dry_run: bool,
-):
+) -> None:
     """Check private repository: run tests, lint etc. First forces validation."""
+    # validate first
+    ctx.invoke(validate, root=root, verbose=verbose)  # TODO: check verbose level
 
-    ctx.invoke(validate, root=root, verbose=verbose)
-
+    # load configs
     checker_config = CheckerConfig.from_yaml(ctx.obj["course_config_path"])
     deadlines_config = DeadlinesConfig.from_yaml(ctx.obj["deadlines_config_path"])
 
+    # read filesystem, check existing tasks
+    course = Course(checker_config, deadlines_config, root, username='private')
+
+    # validate tasks and groups if passed
+    filesystem_tasks: dict[str, FileSystemTask] = dict()
+    if task:
+        for filesystem_task in course.get_tasks(enabled=True):
+            if filesystem_task.name in task:
+                filesystem_tasks[filesystem_task.name] = filesystem_task
+    if group:
+        for filesystem_group in course.get_groups(enabled=True):
+            if filesystem_group.name in group:
+                for filesystem_task in filesystem_group.tasks:
+                    filesystem_tasks[filesystem_task.name] = filesystem_task
+    if filesystem_tasks:
+        print_info(f"Checking tasks: {', '.join(filesystem_tasks.keys())}")
+
+    # create tester to... to test =)
+    tester = Tester(course, checker_config, verbose=verbose, cleanup=not no_clean, dry_run=dry_run)
+
+    # run tests
     # TODO: progressbar on parallelize
-    course = Course(checker_config, deadlines_config, root)
-
-    tester = Tester(course, checker_config, verbose=verbose, dry_run=dry_run)
-
     try:
-        tester.run()
+        tester.run(tasks=list(filesystem_tasks.values()) if filesystem_tasks else None, report=False)
     except TestingError as e:
         print_info("TESTING FAILED", color='red')
         print_info(e)
         exit(1)
+    except Exception as e:
+        print_info("UNEXPECTED ERROR", color='red')
+        print_info(e)
+        exit(1)
+    print_info("TESTING PASSED", color='green')
 
 
 @cli.command()
+@click.argument("root", type=ClickReadableDirectory, default=".")
+@click.argument("reference_root", type=ClickReadableDirectory, default=".")
+@click.option("--submit-score", is_flag=True, help="Submit score to the Manytask server")
+@click.option("--timestamp", type=str, default=None, help="Timestamp to use for the submission")
+@click.option("--username", type=str, default=None, help="Username to use for the submission")
+@click.option("--no-clean", is_flag=True, help="Clean or not check tmp folders")
+@click.option("-v/-s", "--verbose/--silent", is_flag=True, default=False, help="Verbose tests output")
+@click.option("--dry-run", is_flag=True, help="Do not execute anything, only log actions")
 @click.pass_context
-def grade(config_path):
+def grade(
+    ctx: click.Context,
+    root: Path,
+    reference_root: Path,
+    submit_score: bool,
+    timestamp: str | None,
+    username: str | None,
+    no_clean: bool,
+    verbose: bool,
+    dry_run: bool,
+) -> None:
     """
     Process the configuration file and grade the tasks.
     """
+    # load configs
+    checker_config = CheckerConfig.from_yaml(ctx.obj["course_config_path"])
+    deadlines_config = DeadlinesConfig.from_yaml(ctx.obj["deadlines_config_path"])
+
+    # read filesystem, check existing tasks
+    course = Course(checker_config, deadlines_config, root, reference_root, username=username)
+
+    # detect changes to test
+    filesystem_tasks: list[FileSystemTask] = list()
+    # TODO: detect changes
+    filesystem_tasks = [task for task in course.get_tasks(enabled=True) if task.name == 'hello_world']
+
+    # create tester to... to test =)
+    tester = Tester(course, checker_config, verbose=verbose, cleanup=not no_clean, dry_run=dry_run)
+
+    # run tests
+    # TODO: progressbar on parallelize
     try:
-        config_data = yaml.safe_load(Path(config_path).read_text())
-        config = Config.parse_obj(config_data)
-        # Your logic to 'grade' based on the configuration goes here.
-        click.echo("Grading completed successfully.")
+        tester.run(tasks=filesystem_tasks, report=True)
+    except TestingError as e:
+        print_info("TESTING FAILED", color='red')
+        print_info(e)
+        exit(1)
     except Exception as e:
-        click.echo(f"An error occurred during grading: {e}")
+        print_info("UNEXPECTED ERROR", color='red')
+        print_info(e)
+        exit(1)
+    print_info("TESTING PASSED", color='green')
 
 
 if __name__ == "__main__":

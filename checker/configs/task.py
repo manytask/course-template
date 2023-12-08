@@ -14,3 +14,4 @@ class TaskConfig(CustomBaseModel, YamlLoaderMixin):
     structure: CheckerStructureConfig | None = None
     params: CheckerParametersConfig | None = None
     task_pipeline: list[PipelineStageConfig] | None = None
+    report_pipeline: list[PipelineStageConfig] | None = None

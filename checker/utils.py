@@ -32,6 +32,14 @@ def print_info(
     file.flush()
 
 
+def print_separator(
+        symbol: str,
+        file: Any = None,
+        color: str = 'pink',
+        string_length: int = 80,
+) -> None:
+    print_info(symbol * string_length, color=color)
+
 def print_header_info(
         header_string: str,
         file: Any = None,
@@ -40,7 +48,7 @@ def print_header_info(
         **kwargs: Any,
 ) -> None:
     info_extended_string = ' ' + header_string + ' '
-    print_info('')
-    print_info('+' * string_length, color=color)
-    print_info(f"{info_extended_string :+^{string_length}}", color=color)
-    print_info('+' * string_length, color=color)
+    print_info('', file=file)
+    print_separator(symbol='+', string_length=string_length, color=color, file=file)
+    print_info(f"{info_extended_string :+^{string_length}}", color=color, file=file)
+    print_separator(symbol='+', string_length=string_length, color=color, file=file)

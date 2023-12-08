@@ -33,8 +33,8 @@ class RunScriptPlugin(PluginABC):
                 args.script,
                 shell=True,
                 cwd=args.origin,
-                timeout=args.timeout,
-                check=True,
+                timeout=args.timeout,  # kill process after timeout, raise TimeoutExpired
+                check=True,  # raise CalledProcessError if return code is non-zero
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,  # merge stderr & stdout to single output
                 preexec_fn=set_up_env_sandbox,

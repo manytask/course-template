@@ -15,7 +15,7 @@ variables:
 grade:
   image: $REGISTRY/testenv:latest
   script:
-    - python3 -m checker grade
+    - python -m checker grade
       --timestamp $CI_PIPELINE_CREATED_AT
       --username $GITLAB_USER_LOGIN
       --submit-score
