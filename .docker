@@ -16,8 +16,7 @@ RUN python3 -m pip install --upgrade -r /tmp/requirements.txt
 
 # install checker
 # TODO: replace with manytask-checker==1.0.0 when it's released
-COPY ./checker /opt/checker
-RUN python3 -m pip install --upgrade click pyyaml pydantic rich ruff mypy pytest pytest-cov pytest-mock
+RUN python3 -m pip install --upgrade git+https://github.com/manytask/checker.git@new-1.x.x
 
 
 FROM base as testenv
