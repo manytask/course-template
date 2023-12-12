@@ -1,0 +1,4 @@
+version: 1
+
+structure:
+  public_patterns: ["test_public_custom.py"]

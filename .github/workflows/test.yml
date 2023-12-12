@@ -1,0 +1,46 @@
+name: 'Test private repo'
+
+on:
+  pull_request:
+    branches: [ main ]
+
+
+jobs:
+  build-base-docker:
+    uses: manytask/workflows/.github/workflows/reusable-docker-build-push.yml
+    with:
+      dockerfile: .docker
+      target: testenv
+      tags: testenv:${{ github.sha }}
+      artifact: true
+      artifact_name: testenv.tar
+    secrets:
+      registry_username: ${{ github.actor }}
+      registry_password: ${{ secrets.GITHUB_TOKEN }}
+
+  check-repo:
+    needs: [build-base-docker]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Docker Image Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: testenv.tar
+          path: /tmp/
+
+      - name: Load Docker Image
+        run: |
+          docker load --input /tmp/testenv.tar
+
+      - name: Check private repo
+        run: |
+          # RUN: python -m /opt/checker check -- CODE_DIR"
+          docker run \
+            --rm \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            testenv:${{ github.sha }} \
+            python -m checker check /workspace /workspace
