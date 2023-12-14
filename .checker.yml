@@ -11,7 +11,7 @@ structure:
 
 
 # default values for all tasks, can be overwritten in .task.yml params:
-default_params:
+default_parameters:
   run_typechecking: true
   run_linting: true
   run_testing: true
@@ -52,22 +52,22 @@ testing:
       fail: fast  # fast, after_all, never
       run: "run_script"
       args:
-        origin: ${{ TEMP_DIR }}
+        origin: ${{ global.temp_dir }}
         script: "ls -la ."
 
     - name: "Fail never"
       fail: never  # fast, after_all, never
       run: "run_script"
       args:
-        origin: ${{ TEMP_DIR }}
+        origin: ${{ global.temp_dir }}
         script: "false"
 
     - name: "Greeting"
       fail: fast  # fast, after_all, never
       run: "run_script"
       args:
-        origin: ${{ TEMP_DIR }}
-        script: "echo ${{ TEMP_DIR }}"
+        origin: ${{ global.temp_dir }}
+        script: "echo ${{ global.temp_dir }}"
 
   # run once per task
   tasks_pipeline:
@@ -75,87 +75,87 @@ testing:
       fail: fast  # fast, after_all, never
       run: "check_regexps"
       args:
-        origin: "${{ TEMP_DIR }}/${{ TASK_SUB_PATH }}"
+        origin: "${{ global.temp_dir }}/${{ task.task_sub_path }}"
         patterns: ["**/*.py"]
         regexps: ["exit(0)"]
 
     - name: "Run linter"
-      run_if: ${{ run_linting }}
+      run_if: ${{ parameters.run_linting }}
       fail: after_all  # fast, after_all, never
       run: "run_script"
       args:
-        origin: ${{ TEMP_DIR }}
-        script: "python -m ruff --config=pyproject.toml ${{ TASK_SUB_PATH }}"
+        origin: ${{ global.temp_dir }}
+        script: "python -m ruff --config=pyproject.toml ${{ task.task_sub_path }}"
 
     - name: "Run typechecker"
-      run_if: ${{ run_typechecking }}
+      run_if: ${{ parameters.run_typechecking }}
       fail: after_all  # fast, after_all, never
       run: "run_script"
       args:
-        origin: ${{ TEMP_DIR }}
-        script: "python -m mypy --config-file=pyproject.toml ${{ TASK_SUB_PATH }}"
+        origin: ${{ global.temp_dir }}
+        script: "python -m mypy --config-file=pyproject.toml ${{ task.task_sub_path }}"
 
     - name: "Collect tests"
-      run_if: ${{ run_testing }}
+      run_if: ${{ parameters.run_testing }}
       fail: after_all  # fast, after_all, never
       run: "run_script"
       args:
-        origin: ${{ TEMP_DIR }}
-        script: "python -m pytest --tb=no -qq --collect-only ${{ TASK_SUB_PATH }}"
-        timeout: ${{ timeout }}
+        origin: ${{ global.temp_dir }}
+        script: "python -m pytest --tb=no -qq --collect-only ${{ task.task_sub_path }}"
+        timeout: ${{ parameters.timeout }}
 #        isolate: true
 
     - name: "Run tests"
-      run_if: ${{ run_testing }}
+      run_if: ${{ parameters.run_testing }}
       fail: after_all  # fast, after_all, never
       run: "run_pytest"
-      register_score: "test_score"
+      register_output: "pytest_output"
       args:
-        origin: ${{ TEMP_DIR }}
-        target: ${{ TASK_SUB_PATH }}
-        timeout: ${{ timeout }}
-        coverage: ${{ coverage }}
-        partially_scored: ${{ partially_scored }}
+        origin: ${{ global.temp_dir }}
+        target: ${{ task.task_sub_path }}
+        timeout: ${{ parameters.timeout }}
+        coverage: ${{ parameters.coverage }}
+        partially_scored: ${{ parameters.partially_scored }}
 #        isolate: true
 
 #    - name: "Run Merge Request checks"
-#      run_if: ${{ run_merge_request_checks }}
+#      run_if: ${{ parameters.run_merge_request_checks }}
 #      fail: after_all  # fast, after_all, never
 #      run: "check_gitlab_merge_request"
 #      args:
-#        token: ${{ GITLAB_API_TOKEN }}
-#        task_dir: ${{ TASK_SUB_PATH }}
-#        repo_url: ${{ REPOSITORY_URL }}
-#        requre_approval: ${{ require_merge_request_approval }}
-#        search_for_score: ${{ search_for_merge_request_score }}
+#        token: ${{ env.GITLAB_API_TOKEN }}
+#        task_dir: ${{ task.task_sub_path }}
+#        repo_url: ${{ env.REPOSITORY_URL }}
+#        requre_approval: ${{ parameters.require_merge_request_approval }}
+#        search_for_score: ${{ parameters.search_for_merge_request_score }}
 
   # will run once per task only if task_pipeline NOT failed
   report_pipeline:
 #    - name: "Search score in MR"
-#      run_if: ${{ search_for_merge_request_score }}
+#      run_if: ${{ parameters.search_for_merge_request_score }}
 #      run: "search_score_in_gitlab_merge_request"
-#      register_score: "final_score"
+#      register_output: "final_score"
 #      args:
-#        token: ${{ GITLAB_API_TOKEN }}
-#        repo_url: ${{ REPOSITORY_URL }}
-#        mr_label: ${{ TASK_NAME }}
+#        token: ${{ env.GITLAB_API_TOKEN }}
+#        repo_url: ${{ env.REPOSITORY_URL }}
+#        mr_label: ${{ task.task_name }}
 #        score_by: "https://gitlab.manytask.org/test"
 
     - name: "Aggregate score"
-      run_if: ${{ !search_for_merge_request_score }}
+      run_if: ${{ not parameters.search_for_merge_request_score }}
       run: "aggregate"
-      register_score: "final_score"
+      register_output: "final_score"
       args:
-        scores: ["${{ test_score }}"]
+        scores: ["${{ outputs.pytest_output.percentage }}"]
         weights: [1.0]
         strategy: "mean"  # mean, min, max, product, sum
 
     - name: "Report Score Manytask"
-      run_if: ${{ !search_for_merge_request_score }}
+      run_if: ${{ not parameters.search_for_merge_request_score }}
       run: "report_score_manytask"
       args:
-        origin: "${{ TEMP_DIR }}/${{ TASK_SUB_PATH }}"
+        origin: "${{ global.temp_dir }}/${{ task.task_sub_path }}"
         patterns: ["**/*.py"]
-        username: ${{ USERNAME }}
-        task_name: ${{ TASK_NAME }}
-        score: ${{ final_score }}
+        username: ${{ global.username }}
+        task_name: ${{ task.task_name }}
+        score: ${{ outputs.final_score.percentage }}
