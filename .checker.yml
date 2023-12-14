@@ -34,12 +34,6 @@ export:
   templates: search  # search or create
 
 
-# manytask settings, used in scores export (testing)
-manytask:
-  url: https://test.manytask.org
-  course: "test"
-
-
 # settings for Tester, uses .checker.yml and `params` and each task params (in .task.yml)
 testing:
   changes_detection: branch_name  # branch_name, commit_message, last_commit_changes, files_changed
