@@ -3,7 +3,7 @@ version: 1
 
 # can be overwritten in .task.yml for individual tasks
 structure:
-  ignore_patterns: ["checker", ".git", ".idea", ".vscode", "__pycache__", ".venv", ".*_cache", "*.pyc"]
+  ignore_patterns: [".git", ".idea", ".vscode", "__pycache__", ".venv", ".*_cache", "*.pyc"]
   # public patterns: include in export, overwrite during testing
   public_patterns: ["README.md", ".lecture", ".gitlab-ci-students.yml", "requirements.txt", "tools", "pyproject.toml", ".gitignore", "test_public.py", "conftest.py"]
   # private patterns: exclude from export, overwrite during testing
@@ -18,9 +18,7 @@ default_parameters:
 
   partially_scored: false
 
-  run_merge_request_checks: true
-  require_merge_request_approval: false
-  search_for_merge_request_score: false
+  merge_request_task: false
 
   timeout: 60  # seconds
   coverage: null  # 0..1, null for no measurement
@@ -113,20 +111,20 @@ testing:
 #        isolate: true
 
 #    - name: "Run Merge Request checks"
-#      run_if: ${{ parameters.run_merge_request_checks }}
+#      run_if: ${{ parameters.merge_request_task }}
 #      fail: after_all  # fast, after_all, never
 #      run: "check_gitlab_merge_request"
 #      args:
 #        token: ${{ env.GITLAB_API_TOKEN }}
 #        task_dir: ${{ task.task_sub_path }}
 #        repo_url: ${{ env.REPOSITORY_URL }}
-#        requre_approval: ${{ parameters.require_merge_request_approval }}
-#        search_for_score: ${{ parameters.search_for_merge_request_score }}
+#        requre_approval: ${{ parameters.merge_request_task }}
+#        search_for_score: ${{ parameters.merge_request_task }}
 
   # will run once per task only if task_pipeline NOT failed
   report_pipeline:
 #    - name: "Search score in MR"
-#      run_if: ${{ parameters.search_for_merge_request_score }}
+#      run_if: ${{ parameters.merge_request_task }}
 #      run: "search_score_in_gitlab_merge_request"
 #      register_output: "final_score"
 #      args:
@@ -136,7 +134,7 @@ testing:
 #        score_by: "https://gitlab.manytask.org/test"
 
     - name: "Aggregate score"
-      run_if: ${{ not parameters.search_for_merge_request_score }}
+      run_if: ${{ not parameters.merge_request_task }}
       run: "aggregate"
       register_output: "final_score"
       args:
@@ -145,11 +143,13 @@ testing:
         strategy: "mean"  # mean, min, max, product, sum
 
     - name: "Report Score Manytask"
-      run_if: ${{ not parameters.search_for_merge_request_score }}
       run: "report_score_manytask"
       args:
         origin: "${{ global.temp_dir }}/${{ task.task_sub_path }}"
+        report_url: "https://gitlab.manytask.org/test/report"
+        report_token: "test"
         patterns: ["**/*.py"]
-        username: ${{ global.username }}
+        username: "test"
         task_name: ${{ task.task_name }}
+        check_deadline: ${{ parameters.merge_request_task }}
         score: ${{ outputs.final_score.percentage }}
