@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic import DirectoryPath, Field
 
-from checker.plugins import PluginABC
+from checker.plugins import PluginABC, PluginOutput
 from checker.plugins.scripts import RunScriptPlugin
 
 
@@ -20,7 +20,7 @@ class RunPytestPlugin(RunScriptPlugin):
 
         coverage: bool | int | None = None
 
-    def _run(self, args: Args, *, verbose: bool = False) -> str:
+    def _run(self, args: Args, *, verbose: bool = False) -> PluginOutput:
         tests_cmd = ['python', '-m', 'pytest']
 
         if not verbose:
