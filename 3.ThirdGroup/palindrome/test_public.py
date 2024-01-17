@@ -1,4 +1,4 @@
-from .palindrome import is_palindrome
+from palindrome import is_palindrome
 
 
 def test_simple_palindrome():

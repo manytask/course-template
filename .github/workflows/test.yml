@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-base-docker:
-    uses: manytask/workflows/.github/workflows/reusable-docker-build-push.yml
+    uses: manytask/workflows/.github/workflows/reusable-docker-build-push.yml@main
     with:
       dockerfile: .docker
       target: testenv

@@ -5,7 +5,7 @@ version: 1
 structure:
   ignore_patterns: [".git", ".idea", ".vscode", "__pycache__", ".venv", ".*_cache", "*.pyc"]
   # public patterns: include in export, overwrite during testing
-  public_patterns: ["README.md", ".lecture", ".gitlab-ci-students.yml", "requirements.txt", "tools", "pyproject.toml", ".gitignore", "test_public.py", "conftest.py"]
+  public_patterns: [".task.yml", ".group.yml", "README.md", ".lecture", ".gitlab-ci-students.yml", "requirements.txt", "tools", "pyproject.toml", ".gitignore", "test_public.py", "conftest.py"]
   # private patterns: exclude from export, overwrite during testing
   private_patterns: [".*", "test_private.py"]
 

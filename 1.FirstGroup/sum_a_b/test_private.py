@@ -1,6 +1,6 @@
 import pytest
 
-from .sum_a_b import sum_a_b
+from sum_a_b import sum_a_b
 
 
 @pytest.mark.parametrize(
