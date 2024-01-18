@@ -1,4 +1,4 @@
-FROM python:3.12.0-slim as base
+FROM manytask/checker:main-python3.12 as base
 
 # set explicit timezone for time-related tasks
 ENV TZ Europe/Moscow
@@ -14,13 +14,8 @@ RUN apt-get update && \
 COPY requirements.txt /tmp/requirements.txt
 RUN python3 -m pip install --upgrade -r /tmp/requirements.txt
 
-# install checker
-# TODO: replace with manytask-checker==1.0.0 when it's released
-RUN python3 -m pip install --upgrade git+https://github.com/manytask/checker.git@new-1.x.x
-
 
 FROM base as testenv
 
 # copy repo for reference tests
 COPY . /opt/checker/private
-
