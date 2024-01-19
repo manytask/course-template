@@ -3,7 +3,7 @@ version: 1
 
 # can be overwritten in .task.yml for individual tasks
 structure:
-  ignore_patterns: [".git", ".idea", ".vscode", "__pycache__", ".venv", ".*_cache", "*.pyc"]
+  ignore_patterns: [".git", ".github", ".idea", ".vscode", "__pycache__", ".venv", ".*_cache", "*.pyc"]
   # public patterns: include in export, overwrite during testing
   public_patterns: [".task.yml", ".group.yml", "README.md", ".lecture", ".gitlab-ci-students.yml", "requirements.txt", "tools", "pyproject.toml", ".gitignore", "test_public.py", "conftest.py"]
   # private patterns: exclude from export, overwrite during testing
@@ -29,7 +29,7 @@ export:
   destination: https://gitlab.manytask.org/test/public-test-repo
   default_branch: main
   commit_message: "chore(auto): export new tasks"
-  templates: search  # search or create
+  templates: search_or_create  # search, create or search_or_create
 
 
 # settings for Tester, uses .checker.yml and `params` and each task params (in .task.yml)
