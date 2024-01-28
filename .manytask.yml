@@ -27,45 +27,47 @@ deadlines:
   max_submissions: 10  # optional
   submission_penalty: 0.1  # optional
 
+  schedule:
+    - group: 1.FirstGroup
+      enabled: true
+      start: 2020-01-01 18:00:00
+      steps:
+        0.5: 7d
+      end: 13d 03:00:00
+      tasks:
+        - task: hello_world
+          score: 10
+          bonus: 0
+          special: 1
+        - task: sum_a_b
+          score: 5
+          bonus: 5
+          special: 0
+        - task: disabled_task
+          enabled: false
+          score: 5
 
-schedule:
-  - group: 1.FirstGroup
-    enabled: true
-    start: 2020-01-01 18:00:00
-    steps:
-      0.5: 7d
-    end: 13d 03:00:00
-    tasks:
-      - task: hello_world
-        score: 10
-        bonus: 0
-        special: 1
-      - task: sum_a_b
-        score: 5
-        bonus: 5
-        special: 0
-      - task: disabled_task
-        enabled: false
-        score: 5
+    - group: 2.SecondGroup
+      start: 2020-02-01 18:00:00
+      steps:
+        0.9: 2020-02-08 18:00:00
+        0.1: 14d
+      end: "200d"
+      tasks:
+        - task: 2_factorial
+          score: 20
 
-  - group: 2.SecondGroup
-    start: 2020-02-01 18:00:00
-    steps:
-      0.9: 2020-02-08 18:00:00
-      0.1: 14d
-    tasks:
-      - task: 2_factorial
-        score: 20
+    - group: 3.ThirdGroup
+      start: 3000-03-01 18:00:00
+      end: "200d"
+      tasks:
+        - task: palindrome
+          score: 0
+          special: 2
+          url: https://example.com
 
-  - group: 3.ThirdGroup
-    start: 2020-03-01 18:00:00
-    tasks:
-      - task: palindrome
-        score: 0
-        special: 2
-        url: https://example.com
-
-  - group: 4.FourthGroup
-    enabled: false
-    start: 2020-04-01 18:00:00
-    tasks: []
+    - group: 4.FourthGroup
+      enabled: false
+      start: 2020-04-01 18:00:00
+      end: "200d"
+      tasks: []
