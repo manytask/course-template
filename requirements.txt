@@ -1,0 +1,7 @@
+
+
+# testing
+mypy
+ruff
+pytest
+pytest-cov
