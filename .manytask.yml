@@ -37,11 +37,10 @@ deadlines:
       tasks:
         - task: hello_world
           score: 10
-          bonus: 0
           special: 1
+          is_bonus: true  # not counted in total score
         - task: sum_a_b
           score: 5
-          bonus: 5
           special: 0
         - task: disabled_task
           enabled: false
@@ -64,6 +63,7 @@ deadlines:
         - task: palindrome
           score: 0
           special: 2
+          is_special: true  # will mark in manytask
           url: https://example.com
 
     - group: 4.FourthGroup
