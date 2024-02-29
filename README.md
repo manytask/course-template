@@ -39,7 +39,7 @@ Here is important files and folders listed:
 
 ```
 ├── .checker.yml    <- checker config - how to test, export files etc
-├── .deadlines.yml  <- deadlines config - when to open/close tasks - sent to manytask
+├── .manytask.yml   <- course structure - task groups, tasks, deadlines - sent to manytask
 │
 ├── .docker        <- docker image with testing environment
 ├── .dockerignore  <- dockerignore file - important to minimize image size
