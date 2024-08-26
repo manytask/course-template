@@ -77,7 +77,7 @@ testing:
       run: "run_script"
       args:
         origin: ${{ global.temp_dir }}
-        script: "python -m ruff --config=pyproject.toml ${{ task.task_sub_path }}"
+        script: "python -m ruff check --config=pyproject.toml ${{ task.task_sub_path }}"
 
     - name: "Run typechecker"
       run_if: ${{ parameters.run_typechecking }}
